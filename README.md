@@ -11,6 +11,10 @@ A collection of custom Home Assistant Lovelace cards focused on enhancing user e
 
 A customizable Lovelace card that provides press-and-hold functionality for switching entities. Perfect for preventing accidental toggles of important switches by requiring a deliberate hold action.
 
+| Normal State | Press & Hold Action | Configuration |
+|--------------|-------------------|---------------|
+| ![Normal State](images/button-normal-state.png) | ![Press & Hold](images/button-press-hold.png) | ![Configuration](images/button-configuration.png) |
+
 **Features:**
 - **Press and Hold**: Requires holding the button for a configurable duration before toggling
 - **Visual Feedback**: Animated progress ring shows countdown progress with color coding
