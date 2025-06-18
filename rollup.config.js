@@ -5,9 +5,9 @@ import { terser } from 'rollup-plugin-terser';
 export default {
   input: 'src/press-and-hold-button-card.ts',
   output: {
-    file: 'press-and-hold-button-card.js',
+    file: 'dist/nerdo-ux.js',
     format: 'iife',
-    name: 'PressAndHoldButtonCard'
+    name: 'NerdoUX'
   },
   plugins: [
     resolve({
