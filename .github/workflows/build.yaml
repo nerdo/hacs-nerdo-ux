@@ -44,8 +44,8 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nerdo-ux
-          path: dist/nerdo-ux.js
+          name: hacs-nerdo-ux
+          path: dist/hacs-nerdo-ux.js
           
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -60,13 +60,13 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: nerdo-ux
+          name: hacs-nerdo-ux
           path: dist/
           
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/nerdo-ux.js
+          files: dist/hacs-nerdo-ux.js
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

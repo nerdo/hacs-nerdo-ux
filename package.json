@@ -2,14 +2,14 @@
   "name": "nerdo-ux",
   "version": "1.0.0",
   "description": "Nerdo UX - Home Assistant Lovelace cards collection",
-  "main": "dist/nerdo-ux.js",
+  "main": "dist/hacs-nerdo-ux.js",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c --watch",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "deploy": "pnpm run build && scp dist/nerdo-ux.js $HA_HOST:/config/www/"
+    "deploy": "pnpm run build && scp dist/hacs-nerdo-ux.js $HA_HOST:/config/www/"
   },
   "keywords": [
     "home-assistant",

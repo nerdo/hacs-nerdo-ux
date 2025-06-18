@@ -18,7 +18,7 @@ A customizable Lovelace card that provides press-and-hold functionality for swit
 
 ## Installation
 
-Install via HACS by searching for "Nerdo UX" or manually by placing the `nerdo-ux.js` file in your `www` folder.
+Install via HACS by searching for "Nerdo UX" or manually by placing the `hacs-nerdo-ux.js` file in your `www` folder.
 
 ## Configuration
 

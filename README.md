@@ -32,13 +32,13 @@ A customizable Lovelace card that provides press-and-hold functionality for swit
 
 ### Manual Installation
 
-1. Download `nerdo-ux.js` from the [latest release](https://github.com/nerdo/hacs-nerdo-ux/releases)
+1. Download `hacs-nerdo-ux.js` from the [latest release](https://github.com/nerdo/hacs-nerdo-ux/releases)
 2. Copy it to your `www` folder in your Home Assistant config directory
 3. Add the resource to your Lovelace configuration:
 
 ```yaml
 resources:
-  - url: /local/nerdo-ux.js
+  - url: /local/hacs-nerdo-ux.js
     type: module
 ```
 
@@ -129,7 +129,7 @@ pnpm run deploy
 │   ├── press-and-hold-button-card.ts        # Press and hold card
 │   └── press-and-hold-button-card-editor.ts # Card configuration editor
 ├── dist/
-│   └── nerdo-ux.js                          # Build output (generated)
+│   └── hacs-nerdo-ux.js                     # Build output (generated)
 ├── hacs.json                                # HACS configuration
 ├── info.md                                  # HACS info
 ├── package.json                             # Node dependencies
