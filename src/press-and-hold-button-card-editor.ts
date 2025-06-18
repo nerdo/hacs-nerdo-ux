@@ -61,7 +61,15 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
   @state() private _config?: any;
 
   public setConfig(config: any): void {
-    this._config = config || {};
+    // Apply defaults to show proper values in editor
+    this._config = {
+      hold_duration: 1500,
+      show_name: true,
+      show_state: false,
+      show_icon: true,
+      icon_height: 80,
+      ...config,
+    };
   }
 
   protected render(): TemplateResult {
@@ -69,9 +77,17 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
       return html``;
     }
 
-    const data = {
-      ...this._config,
-    };
+    // Ensure we have a real entity if none is selected
+    const data = { ...this._config };
+    if (!data.entity || data.entity === 'switch.example') {
+      const switchableEntities = Object.keys(this.hass.states).filter(entityId => {
+        const domain = entityId.split('.')[0];
+        return ['switch', 'light', 'input_boolean'].includes(domain);
+      });
+      if (switchableEntities.length > 0) {
+        data.entity = switchableEntities[0];
+      }
+    }
 
     return html`
       <ha-form

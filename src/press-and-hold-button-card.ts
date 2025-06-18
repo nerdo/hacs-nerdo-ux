@@ -36,12 +36,27 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
   
   private holdTimer?: number;
 
-  public static getStubConfig(): PressAndHoldButtonCardConfig {
+  public static getStubConfig(hass?: HomeAssistant): PressAndHoldButtonCardConfig {
+    // Find a real switchable entity if hass is available
+    let defaultEntity = 'switch.example';
+    if (hass) {
+      const switchableEntities = Object.keys(hass.states).filter(entityId => {
+        const domain = entityId.split('.')[0];
+        return ['switch', 'light', 'input_boolean'].includes(domain);
+      });
+      if (switchableEntities.length > 0) {
+        defaultEntity = switchableEntities[0];
+      }
+    }
+
     return {
       type: 'custom:press-and-hold-button-card',
-      entity: 'switch.example',
-      name: 'Press & Hold Button',
-      hold_duration: 3000,
+      entity: defaultEntity,
+      hold_duration: 1500,
+      show_name: true,
+      show_state: false,
+      show_icon: true,
+      icon_height: 80,
     };
   }
 
@@ -54,9 +69,9 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     }
 
     this.config = {
-      hold_duration: 3000,
+      hold_duration: 1500,
       show_name: true,
-      show_state: true,
+      show_state: false,
       show_icon: true,
       icon_height: 80,
       ...config,
@@ -166,7 +181,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     this.isHolding = true;
     this.isAnimating = true;
 
-    const duration = this.config.hold_duration || 3000;
+    const duration = this.config.hold_duration || 1500;
     
     // Set CSS custom property for animation duration and listen for completion
     this.updateComplete.then(() => {
@@ -280,7 +295,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
         transition: opacity 0.2s ease;
         z-index: 10;
         pointer-events: none;
-        --hold-duration: 3000ms;
+        --hold-duration: 1500ms;
       }
 
       .progress-ring.active {
