@@ -1,0 +1,38 @@
+{
+  "name": "press-and-hold-button-card",
+  "version": "1.0.0",
+  "description": "A Home Assistant Lovelace card with press-and-hold functionality",
+  "main": "dist/press-and-hold-button-card.js",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c --watch",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "deploy": "pnpm run build && scp press-and-hold-button-card.js $HA_HOST:/config/www/"
+  },
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "card",
+    "button",
+    "press-hold"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.0",
+    "rollup": "^3.0.0",
+    "rollup-plugin-terser": "^7.0.0",
+    "tslib": "^2.0.0",
+    "typescript": "^4.9.0"
+  },
+  "dependencies": {
+    "custom-card-helpers": "^1.9.0",
+    "lit": "^2.0.0"
+  }
+}

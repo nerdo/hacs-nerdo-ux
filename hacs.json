@@ -1,0 +1,8 @@
+{
+  "name": "Press and Hold Button Card",
+  "content_in_root": false,
+  "filename": "press-and-hold-button-card.js",
+  "country": ["US"],
+  "render_readme": true,
+  "homeassistant": "0.115.0"
+}
