@@ -98,7 +98,7 @@ icon_height: 100
 ### Prerequisites
 
 - Node.js 16+
-- pnpm (recommended) or npm
+- pnpm
 
 ### Building
 
