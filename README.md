@@ -3,7 +3,7 @@
 A collection of custom Home Assistant Lovelace cards focused on enhancing user experience and preventing accidental actions.
 
 [![HACS Badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/release/yourusername/nerdo-ux.svg?style=for-the-badge)](https://github.com/yourusername/nerdo-ux/releases)
+[![GitHub Release](https://img.shields.io/github/release/nerdo/hacs-nerdo-ux.svg?style=for-the-badge)](https://github.com/nerdo/hacs-nerdo-ux/releases)
 
 ## Cards Included
 
@@ -32,7 +32,7 @@ A customizable Lovelace card that provides press-and-hold functionality for swit
 
 ### Manual Installation
 
-1. Download `nerdo-ux.js` from the [latest release](https://github.com/yourusername/nerdo-ux/releases)
+1. Download `nerdo-ux.js` from the [latest release](https://github.com/nerdo/hacs-nerdo-ux/releases)
 2. Copy it to your `www` folder in your Home Assistant config directory
 3. Add the resource to your Lovelace configuration:
 
@@ -159,4 +159,4 @@ MIT License - see LICENSE file for details
 
 ## Support
 
-If you encounter issues or have feature requests, please [open an issue](https://github.com/yourusername/nerdo-ux/issues) on GitHub.
+If you encounter issues or have feature requests, please [open an issue](https://github.com/nerdo/hacs-nerdo-ux/issues) on GitHub.

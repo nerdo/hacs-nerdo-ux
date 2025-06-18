@@ -390,5 +390,5 @@ window.customCards.push({
   name: 'Press and Hold Button Card',
   description: 'A button card that requires press and hold to toggle entities',
   preview: true,
-  documentationURL: 'https://github.com/yourusername/homeassistant-press-and-hold-button',
+  documentationURL: 'https://github.com/nerdo/hacs-nerdo-ux',
 });
