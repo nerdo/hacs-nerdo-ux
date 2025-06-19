@@ -282,23 +282,45 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
   private executeAction(): void {
     if (!this.config.entity) return;
 
-    const config = {
-      entity: this.config.entity,
-      tap_action: this.config.tap_action || {
-        action: 'toggle' as const
-      }
-    };
-
-    const actionConfig = config.tap_action;
+    // If no tap_action is configured, or it's set to toggle, handle toggle ourselves
+    const actionConfig = this.config.tap_action || { action: 'toggle' as const };
     
-    this.dispatchEvent(new CustomEvent('hass-action', {
-      bubbles: true,
-      composed: true,
-      detail: {
-        config: actionConfig,
-        action: 'tap'
+    if (actionConfig.action === 'toggle') {
+      // For toggle action, call the service directly
+      const entity = this.hass.states[this.config.entity];
+      if (!entity) return;
+
+      const domain = this.config.entity.split('.')[0];
+      
+      // Determine the appropriate service based on domain and state
+      let service: string;
+      if (domain === 'button' || domain === 'input_button' || domain === 'scene') {
+        service = 'press';
+      } else if (entity.state === 'on') {
+        service = 'turn_off';
+      } else {
+        service = 'turn_on';
       }
-    }));
+
+      this.hass.callService(domain, service, {
+        entity_id: this.config.entity,
+      });
+    } else {
+      // For other actions, use the hass-action event system
+      const configWithEntity = { ...actionConfig };
+      if (!configWithEntity.entity) {
+        configWithEntity.entity = this.config.entity;
+      }
+      
+      this.dispatchEvent(new CustomEvent('hass-action', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          config: configWithEntity,
+          action: 'tap'
+        }
+      }));
+    }
   }
 
   static get styles(): CSSResultGroup {
