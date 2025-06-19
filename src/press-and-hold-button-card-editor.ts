@@ -7,6 +7,7 @@ import {
 } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helpers';
+import { BUILD_TIMESTAMP } from './build-info';
 
 const SCHEMA = [
   {
@@ -97,6 +98,9 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
         .computeLabel=${this._computeLabel}
         @value-changed=${this._valueChanged}
       ></ha-form>
+      <div class="build-info">
+        Built: ${BUILD_TIMESTAMP}
+      </div>
     `;
   }
 
@@ -139,6 +143,14 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
       ha-form {
         display: block;
         padding: 16px;
+      }
+      .build-info {
+        padding: 8px 16px;
+        font-size: 11px;
+        color: var(--secondary-text-color);
+        opacity: 0.7;
+        border-top: 1px solid var(--divider-color);
+        background: var(--card-background-color);
       }
     `;
   }

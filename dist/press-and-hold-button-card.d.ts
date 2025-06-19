@@ -19,13 +19,18 @@ export declare class PressAndHoldButtonCard extends LitElement implements Lovela
     private config;
     private isHolding;
     private isAnimating;
+    static get buildTimestamp(): string;
+    get buildTimestamp(): string;
     private holdTimer?;
+    private startY?;
+    private startX?;
     static getStubConfig(hass?: HomeAssistant): PressAndHoldButtonCardConfig;
     setConfig(config: PressAndHoldButtonCardConfig): void;
     getCardSize(): number;
     static getConfigElement(): any;
     protected render(): TemplateResult;
     private handlePointerDown;
+    private handlePointerMove;
     private handlePointerUp;
     private handleContextMenu;
     private startHold;

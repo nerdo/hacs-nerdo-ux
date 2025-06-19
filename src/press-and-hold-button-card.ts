@@ -8,10 +8,16 @@ import {
 } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, LovelaceCard, LovelaceCardConfig } from 'custom-card-helpers';
+import { BUILD_TIMESTAMP } from './build-info';
 import './press-and-hold-button-card-editor';
 
 // Ensure editor is loaded
 customElements.get('press-and-hold-button-card-editor') || import('./press-and-hold-button-card-editor');
+
+console.log(`🚀 Nerdo UX loaded, built at ${BUILD_TIMESTAMP}`);
+
+// Make build timestamp globally available for debugging
+(window as any).__NERDO_UX_BUILD_TIMESTAMP__ = BUILD_TIMESTAMP;
 
 interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
   type: string;
@@ -34,7 +40,17 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
   @state() private isHolding = false;
   @state() private isAnimating = false;
   
+  public static get buildTimestamp(): string {
+    return BUILD_TIMESTAMP;
+  }
+  
+  public get buildTimestamp(): string {
+    return BUILD_TIMESTAMP;
+  }
+  
   private holdTimer?: number;
+  private startY?: number;
+  private startX?: number;
 
   public static getStubConfig(hass?: HomeAssistant): PressAndHoldButtonCardConfig {
     // Find a real switchable entity if hass is available
@@ -112,8 +128,10 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
             class="button ${isOn ? 'on' : 'off'} ${this.isHolding ? 'holding' : ''}"
             style="--icon-height: ${iconHeight}px"
             @pointerdown=${this.handlePointerDown}
-            @pointerup=${this.handlePointerUp}
-            @pointerleave=${this.handlePointerUp}
+            @pointerup=${(e: PointerEvent) => this.handlePointerUp(e)}
+            @pointerleave=${(e: PointerEvent) => this.handlePointerUp(e)}
+            @pointercancel=${(e: PointerEvent) => this.handlePointerUp(e)}
+            @pointermove=${this.handlePointerMove}
             @contextmenu=${this.handleContextMenu}
           >
             <div class="progress-ring ${this.isHolding ? 'active' : ''} ${this.isAnimating ? 'animating' : ''} ${isOn ? 'turning-off' : 'turning-on'}">
@@ -164,10 +182,48 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
 
   private handlePointerDown(e: PointerEvent): void {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Store initial touch position for scroll detection
+    this.startX = e.clientX;
+    this.startY = e.clientY;
+    
+    // Set pointer capture to ensure we get all pointer events
+    (e.target as Element).setPointerCapture(e.pointerId);
+    
     this.startHold();
   }
 
-  private handlePointerUp(): void {
+  private handlePointerMove(e: PointerEvent): void {
+    if (!this.isHolding || this.startX === undefined || this.startY === undefined) {
+      return;
+    }
+
+    // Calculate movement distance
+    const deltaX = Math.abs(e.clientX - this.startX);
+    const deltaY = Math.abs(e.clientY - this.startY);
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // If user has moved more than 10px, consider it a scroll/drag and cancel hold
+    if (distance > 10) {
+      this.handlePointerUp(e);
+    }
+  }
+
+  private handlePointerUp(e?: PointerEvent): void {
+    if (e) {
+      // Release pointer capture
+      try {
+        (e.target as Element).releasePointerCapture(e.pointerId);
+      } catch (err) {
+        // Ignore errors if pointer capture is already released
+      }
+    }
+    
+    // Reset position tracking
+    this.startX = undefined;
+    this.startY = undefined;
+    
     this.stopHold();
   }
 
@@ -226,15 +282,23 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
   private executeAction(): void {
     if (!this.config.entity) return;
 
-    const entity = this.hass.states[this.config.entity];
-    if (!entity) return;
+    const config = {
+      entity: this.config.entity,
+      tap_action: this.config.tap_action || {
+        action: 'toggle' as const
+      }
+    };
 
-    const domain = this.config.entity.split('.')[0];
-    const service = entity.state === 'on' ? 'turn_off' : 'turn_on';
-
-    this.hass.callService(domain, service, {
-      entity_id: this.config.entity,
-    });
+    const actionConfig = config.tap_action;
+    
+    this.dispatchEvent(new CustomEvent('hass-action', {
+      bubbles: true,
+      composed: true,
+      detail: {
+        config: actionConfig,
+        action: 'tap'
+      }
+    }));
   }
 
   static get styles(): CSSResultGroup {
@@ -267,6 +331,9 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
         cursor: pointer;
         background: var(--card-background-color, #ffffff);
         border: 2px solid var(--divider-color, #e1e1e1);
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
 
       .button.on {
