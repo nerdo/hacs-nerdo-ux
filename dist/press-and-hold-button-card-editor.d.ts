@@ -5,6 +5,8 @@ export declare class PressAndHoldButtonCardEditor extends LitElement implements 
     private _config?;
     setConfig(config: any): void;
     protected render(): TemplateResult;
+    private _buildSchema;
+    private _getDefaultActionLabel;
     private _valueChanged;
     private _computeLabel;
     static get styles(): CSSResultGroup;

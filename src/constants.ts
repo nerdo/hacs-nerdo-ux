@@ -7,5 +7,5 @@ export const DEFAULT_CONFIG = {
   SHOW_ICON: true,
   ICON_HEIGHT: 80,
   CAP_STYLE: 'rounded' as const,
-  HOLD_ACTION: { action: 'toggle' as const },
+  HOLD_ACTION: 'default' as const,
 } as const;

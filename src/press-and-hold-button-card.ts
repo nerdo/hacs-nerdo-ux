@@ -7,7 +7,7 @@ import {
   PropertyValues,
 } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { HomeAssistant, LovelaceCard, LovelaceCardConfig } from 'custom-card-helpers';
+import { HomeAssistant, LovelaceCard, LovelaceCardConfig, handleAction } from 'custom-card-helpers';
 import { BUILD_TIMESTAMP } from './build-info';
 import { DEFAULT_CONFIG } from './constants';
 import './press-and-hold-button-card-editor';
@@ -21,20 +21,6 @@ console.log(`🚀 Nerdo UX loaded, built at ${BUILD_TIMESTAMP}`);
 (window as any).__NERDO_UX_BUILD_TIMESTAMP__ = BUILD_TIMESTAMP;
 
 
-interface ActionConfig {
-  action: 'toggle' | 'turn_on' | 'turn_off' | 'call-service' | 'navigate' | 'url' | 'more-info' | 'none';
-  entity?: string;
-  service?: string;
-  service_data?: Record<string, any>;
-  target?: Record<string, any>;
-  navigation_path?: string;
-  url_path?: string;
-  confirmation?: boolean | {
-    text?: string;
-    exemptions?: Array<{ user: string }>;
-  };
-}
-
 interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
   type: string;
   entity: string;
@@ -47,7 +33,9 @@ interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
   show_icon?: boolean;
   icon_height?: number;
   cap_style?: 'none' | 'rounded';
-  hold_action?: ActionConfig;
+  hold_action?: 'default' | 'toggle' | 'more-info' | 'call-service';
+  service?: string; // Service to call (e.g., "light.turn_on") 
+  service_data?: Record<string, unknown>; // Service arguments as JSON object
 }
 
 @customElement('press-and-hold-button-card')
@@ -315,29 +303,130 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
       console.error(`Press and Hold Button Card: Entity not found: ${this.config.entity}`);
       return;
     }
-
+    
     console.log(`Press and Hold Button Card: Executing action for ${this.config.entity}`);
-
-    // Get the configured action or default
-    const actionConfig = this.config.hold_action || DEFAULT_CONFIG.HOLD_ACTION;
     
-    // Create the action configuration
-    const configWithEntity: any = { ...actionConfig };
-    if (!configWithEntity.entity && actionConfig.action !== 'none') {
-      configWithEntity.entity = this.config.entity;
+    const actionType = this.config.hold_action || 'default';
+    
+    switch (actionType) {
+      case 'default':
+        this.executeDefaultAction(entity);
+        break;
+        
+      case 'toggle':
+        this.executeToggleAction(entity);
+        break;
+        
+      case 'more-info':
+        this.executeMoreInfoAction();
+        break;
+        
+      case 'call-service':
+        this.executeCustomServiceAction();
+        break;
+        
+      default:
+        console.error(`Press and Hold Button Card: Unknown action: ${actionType}`);
+        return;
     }
+  }
+
+  private executeDefaultAction(entity: any): void {
+    const domain = entity.entity_id.split('.')[0];
     
-    console.log(`Press and Hold Button Card: Dispatching ${actionConfig.action} action`, configWithEntity);
+    switch (domain) {
+      case 'button':
+        // Button entities should be pressed, not toggled
+        console.log('Default action for button: press');
+        handleAction(this, this.hass, {
+          entity: this.config.entity,
+          hold_action: {
+            action: 'call-service',
+            service: 'button.press',
+            target: { entity_id: this.config.entity }
+          }
+        }, 'hold');
+        break;
+        
+      case 'light':
+      case 'switch':
+      case 'input_boolean':
+        // These entities support toggle
+        console.log('Default action for toggleable entity: toggle');
+        handleAction(this, this.hass, {
+          entity: this.config.entity,
+          hold_action: { action: 'toggle' }
+        }, 'hold');
+        break;
+        
+      case 'cover':
+        // Covers can be toggled (open/close)
+        console.log('Default action for cover: toggle');
+        handleAction(this, this.hass, {
+          entity: this.config.entity,
+          hold_action: { action: 'toggle' }
+        }, 'hold');
+        break;
+        
+      default:
+        // For other entities, show more info
+        console.log('Default action for other entity: more-info');
+        this.executeMoreInfoAction();
+        break;
+    }
+  }
+
+  private executeToggleAction(entity: any): void {
+    const domain = entity.entity_id.split('.')[0];
     
-    // Use Home Assistant's standard action dispatch system
-    this.dispatchEvent(new CustomEvent('hass-action', {
-      bubbles: true,
-      composed: true,
-      detail: {
-        config: configWithEntity,
-        action: 'tap'
+    // Check if entity supports toggle
+    if (['light', 'switch', 'input_boolean', 'cover', 'fan', 'media_player'].includes(domain)) {
+      console.log('Toggle action for compatible entity');
+      handleAction(this, this.hass, {
+        entity: this.config.entity,
+        hold_action: { action: 'toggle' }
+      }, 'hold');
+    } else {
+      console.warn(`Entity ${this.config.entity} does not support toggle action. Domain: ${domain}`);
+      // Fallback to more-info for incompatible entities
+      this.executeMoreInfoAction();
+    }
+  }
+
+  private executeMoreInfoAction(): void {
+    console.log('More info action');
+    handleAction(this, this.hass, {
+      entity: this.config.entity,
+      hold_action: { action: 'more-info' }
+    }, 'hold');
+  }
+
+  private executeCustomServiceAction(): void {
+    if (!this.config.service) {
+      console.error('No service specified for call-service action');
+      return;
+    }
+
+    // Validate service format
+    const serviceParts = this.config.service.split('.');
+    if (serviceParts.length !== 2) {
+      console.error(`Invalid service format: ${this.config.service}. Expected: domain.service`);
+      return;
+    }
+
+    console.log(`Custom service action: ${this.config.service}`);
+
+    const serviceData = this.config.service_data || {};
+    
+    handleAction(this, this.hass, {
+      entity: this.config.entity,
+      hold_action: {
+        action: 'call-service',
+        service: this.config.service,
+        service_data: serviceData,
+        target: { entity_id: this.config.entity }
       }
-    }));
+    }, 'hold');
   }
 
   static get styles(): CSSResultGroup {
