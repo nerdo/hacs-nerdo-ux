@@ -7,8 +7,9 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c --watch",
-    "lint": "eslint src --ext .ts",
-    "typecheck": "tsc --noEmit",
+    "lint": "node scripts/generate-build-info.js && eslint src --ext .ts",
+    "typecheck": "node scripts/generate-build-info.js && tsc --noEmit",
+    "generate-build-info": "node scripts/generate-build-info.js",
     "deploy": "pnpm run build && scp dist/hacs-nerdo-ux.js $HA_HOST:/config/www/"
   },
   "keywords": [
