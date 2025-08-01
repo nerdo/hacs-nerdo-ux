@@ -21,6 +21,20 @@ console.log(`🚀 Nerdo UX loaded, built at ${BUILD_TIMESTAMP}`);
 (window as any).__NERDO_UX_BUILD_TIMESTAMP__ = BUILD_TIMESTAMP;
 
 
+interface ActionConfig {
+  action: 'toggle' | 'turn_on' | 'turn_off' | 'call-service' | 'navigate' | 'url' | 'more-info' | 'none';
+  entity?: string;
+  service?: string;
+  service_data?: Record<string, any>;
+  target?: Record<string, any>;
+  navigation_path?: string;
+  url_path?: string;
+  confirmation?: boolean | {
+    text?: string;
+    exemptions?: Array<{ user: string }>;
+  };
+}
+
 interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
   type: string;
   entity: string;
@@ -33,8 +47,7 @@ interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
   show_icon?: boolean;
   icon_height?: number;
   cap_style?: 'none' | 'rounded';
-  tap_action?: any;
-  hold_action?: any;
+  hold_action?: ActionConfig;
 }
 
 @customElement('press-and-hold-button-card')
@@ -79,6 +92,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
       show_icon: DEFAULT_CONFIG.SHOW_ICON,
       icon_height: DEFAULT_CONFIG.ICON_HEIGHT,
       cap_style: DEFAULT_CONFIG.CAP_STYLE,
+      hold_action: DEFAULT_CONFIG.HOLD_ACTION,
     };
   }
 
@@ -98,6 +112,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
       show_icon: DEFAULT_CONFIG.SHOW_ICON,
       icon_height: DEFAULT_CONFIG.ICON_HEIGHT,
       cap_style: DEFAULT_CONFIG.CAP_STYLE,
+      hold_action: DEFAULT_CONFIG.HOLD_ACTION,
       ...config,
     };
   }
@@ -303,45 +318,26 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
 
     console.log(`Press and Hold Button Card: Executing action for ${this.config.entity}`);
 
-    // Get the configured action or default to toggle
-    const actionConfig = this.config.tap_action || { action: 'toggle' as const };
+    // Get the configured action or default
+    const actionConfig = this.config.hold_action || DEFAULT_CONFIG.HOLD_ACTION;
     
-    if (actionConfig.action === 'toggle') {
-      // Use Home Assistant's standard action dispatch system for toggle
-      // This handles domain-specific logic automatically (covers, locks, etc.)
-      const configWithEntity = { 
-        action: 'toggle',
-        entity: this.config.entity
-      };
-      
-      console.log(`Press and Hold Button Card: Dispatching toggle action for ${this.config.entity}`);
-      
-      this.dispatchEvent(new CustomEvent('hass-action', {
-        bubbles: true,
-        composed: true,
-        detail: {
-          config: configWithEntity,
-          action: 'tap'
-        }
-      }));
-    } else {
-      // For other actions, use the hass-action event system
-      const configWithEntity = { ...actionConfig };
-      if (!configWithEntity.entity) {
-        configWithEntity.entity = this.config.entity;
-      }
-      
-      console.log(`Press and Hold Button Card: Dispatching ${actionConfig.action} action for ${this.config.entity}`);
-      
-      this.dispatchEvent(new CustomEvent('hass-action', {
-        bubbles: true,
-        composed: true,
-        detail: {
-          config: configWithEntity,
-          action: 'tap'
-        }
-      }));
+    // Create the action configuration
+    const configWithEntity: any = { ...actionConfig };
+    if (!configWithEntity.entity && actionConfig.action !== 'none') {
+      configWithEntity.entity = this.config.entity;
     }
+    
+    console.log(`Press and Hold Button Card: Dispatching ${actionConfig.action} action`, configWithEntity);
+    
+    // Use Home Assistant's standard action dispatch system
+    this.dispatchEvent(new CustomEvent('hass-action', {
+      bubbles: true,
+      composed: true,
+      detail: {
+        config: configWithEntity,
+        action: 'tap'
+      }
+    }));
   }
 
   static get styles(): CSSResultGroup {

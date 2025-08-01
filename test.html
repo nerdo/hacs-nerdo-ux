@@ -128,7 +128,23 @@
                 <select id="testEntity">
                     <option value="switch.test">Switch (switch.test)</option>
                     <option value="cover.garage_door">Garage Door (cover.garage_door)</option>
+                    <option value="light.living_room">Light (light.living_room)</option>
                 </select>
+            </div>
+            <div class="config-item">
+                <label>Hold Action:</label>
+                <select id="holdAction">
+                    <option value="toggle">Toggle</option>
+                    <option value="turn_on">Turn On</option>
+                    <option value="turn_off">Turn Off</option>
+                    <option value="call-service">Call Service</option>
+                    <option value="more-info">More Info</option>
+                    <option value="none">None</option>
+                </select>
+            </div>
+            <div class="config-item" id="serviceConfig" style="display: none;">
+                <label>Service:</label>
+                <input type="text" id="serviceInput" placeholder="e.g., light.turn_on">
             </div>
             <button onclick="updateConfig()">Update Configuration</button>
         </div>
@@ -164,23 +180,55 @@
                         icon: 'mdi:garage',
                         device_class: 'garage'
                     }
+                },
+                'light.living_room': {
+                    entity_id: 'light.living_room',
+                    state: 'off',
+                    attributes: {
+                        friendly_name: 'Living Room Light',
+                        icon: 'mdi:lightbulb',
+                        brightness: 255
+                    }
                 }
             },
             callService: function(domain, service, data) {
-                log(`Called service: ${domain}.${service} on ${data.entity_id}`);
-                // Toggle the mock state
-                const entity = this.states[data.entity_id];
+                const entityId = data.entity_id || data.entity;
+                log(`Called service: ${domain}.${service} on ${entityId || 'no entity'}`);
+                
+                // Update the mock state
+                const entity = entityId ? this.states[entityId] : null;
                 if (entity) {
-                    if (domain === 'cover') {
-                        entity.state = entity.state === 'closed' ? 'open' : 'closed';
-                    } else {
-                        entity.state = entity.state === 'on' ? 'off' : 'on';  
+                    switch (service) {
+                        case 'toggle':
+                            if (domain === 'cover') {
+                                entity.state = entity.state === 'closed' ? 'open' : 'closed';
+                            } else {
+                                entity.state = entity.state === 'on' ? 'off' : 'on';
+                            }
+                            break;
+                        case 'turn_on':
+                            entity.state = 'on';
+                            break;
+                        case 'turn_off':
+                            entity.state = 'off';
+                            break;
+                        case 'open_cover':
+                            entity.state = 'open';
+                            break;
+                        case 'close_cover':
+                            entity.state = 'closed';
+                            break;
+                        default:
+                            log(`Service ${service} not handled in mock, keeping current state`);
                     }
+                    
                     // Trigger update
                     setTimeout(() => {
                         const card = document.getElementById('testCard');
                         card.requestUpdate();
                     }, 100);
+                } else if (entityId) {
+                    log(`Entity ${entityId} not found in mock states`);
                 }
             }
         };
@@ -196,6 +244,17 @@
         function updateConfig() {
             const card = document.getElementById('testCard');
             const selectedEntity = document.getElementById('testEntity').value;
+            const holdAction = document.getElementById('holdAction').value;
+            
+            // Build hold_action config
+            const holdActionConfig = { action: holdAction };
+            if (holdAction === 'call-service') {
+                const serviceInput = document.getElementById('serviceInput').value;
+                if (serviceInput) {
+                    holdActionConfig.service = serviceInput;
+                }
+            }
+            
             const config = {
                 type: 'custom:press-and-hold-button-card',
                 entity: selectedEntity,
@@ -203,13 +262,14 @@
                 movement_tolerance: parseInt(document.getElementById('movementTolerance').value),
                 icon_height: parseInt(document.getElementById('iconHeight').value),
                 cap_style: document.getElementById('capStyle').value,
+                hold_action: holdActionConfig,
                 show_name: true,
                 show_state: true,
                 show_icon: true
             };
             
             card.setConfig(config);
-            log(`Config updated: entity=${config.entity}, hold_duration=${config.hold_duration}ms, movement_tolerance=${config.movement_tolerance}px, cap_style=${config.cap_style}`);
+            log(`Config updated: entity=${config.entity}, hold_action=${JSON.stringify(config.hold_action)}, hold_duration=${config.hold_duration}ms, movement_tolerance=${config.movement_tolerance}px, cap_style=${config.cap_style}`);
         }
 
         function log(message) {
@@ -248,6 +308,16 @@
         }
 
         function setupEventListeners() {
+            // Show/hide service config based on action selection
+            document.getElementById('holdAction').addEventListener('change', function(e) {
+                const serviceConfig = document.getElementById('serviceConfig');
+                if (e.target.value === 'call-service') {
+                    serviceConfig.style.display = 'block';
+                } else {
+                    serviceConfig.style.display = 'none';
+                }
+            });
+
             document.addEventListener('pointerdown', function(e) {
                 const card = e.target.closest('press-and-hold-button-card');
                 if (card) {
@@ -275,29 +345,51 @@
                 
                 const { config, action } = event.detail;
                 
-                if (config && config.entity && mockHass) {
-                    log(`Processing hass-action: ${action} on ${config.entity}`);
+                if (config && mockHass) {
+                    log(`Processing hass-action: ${config.action} on ${config.entity || 'no entity'}`);
                     
-                    // Extract domain from entity_id
-                    const domain = config.entity.split('.')[0];
-                    
-                    // Determine service based on action and domain
-                    let service;
-                    if (config.action === 'toggle') {
-                        if (domain === 'cover') {
-                            // For covers, toggle between open/close
-                            const currentState = mockHass.states[config.entity].state;
-                            service = currentState === 'closed' ? 'open_cover' : 'close_cover';
-                        } else {
-                            // For switches and other domains, use toggle
-                            service = 'toggle';
-                        }
-                    } else {
-                        service = config.action || 'toggle';
+                    switch (config.action) {
+                        case 'toggle':
+                        case 'turn_on':
+                        case 'turn_off':
+                            if (config.entity) {
+                                const domain = config.entity.split('.')[0];
+                                let service = config.action;
+                                
+                                if (config.action === 'toggle' && domain === 'cover') {
+                                    // For covers, toggle between open/close
+                                    const currentState = mockHass.states[config.entity].state;
+                                    service = currentState === 'closed' ? 'open_cover' : 'close_cover';
+                                }
+                                
+                                mockHass.callService(domain, service, { entity_id: config.entity });
+                            }
+                            break;
+                            
+                        case 'call-service':
+                            if (config.service) {
+                                const [domain, service] = config.service.split('.');
+                                const serviceData = config.service_data || {};
+                                if (config.entity) {
+                                    serviceData.entity_id = config.entity;
+                                }
+                                mockHass.callService(domain, service, serviceData);
+                            } else {
+                                log('Warning: call-service action without service specified');
+                            }
+                            break;
+                            
+                        case 'more-info':
+                            log(`Would show more-info dialog for ${config.entity}`);
+                            break;
+                            
+                        case 'none':
+                            log('No action configured');
+                            break;
+                            
+                        default:
+                            log(`Unknown action: ${config.action}`);
                     }
-                    
-                    // Call the mock service
-                    mockHass.callService(domain, service, { entity_id: config.entity });
                 }
             });
         }

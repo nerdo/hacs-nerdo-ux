@@ -1,6 +1,21 @@
 import { LitElement, CSSResultGroup, TemplateResult, PropertyValues } from 'lit';
 import { HomeAssistant, LovelaceCard, LovelaceCardConfig } from 'custom-card-helpers';
 import './press-and-hold-button-card-editor';
+interface ActionConfig {
+    action: 'toggle' | 'turn_on' | 'turn_off' | 'call-service' | 'navigate' | 'url' | 'more-info' | 'none';
+    entity?: string;
+    service?: string;
+    service_data?: Record<string, any>;
+    target?: Record<string, any>;
+    navigation_path?: string;
+    url_path?: string;
+    confirmation?: boolean | {
+        text?: string;
+        exemptions?: Array<{
+            user: string;
+        }>;
+    };
+}
 interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
     type: string;
     entity: string;
@@ -13,8 +28,7 @@ interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
     show_icon?: boolean;
     icon_height?: number;
     cap_style?: 'none' | 'rounded';
-    tap_action?: any;
-    hold_action?: any;
+    hold_action?: ActionConfig;
 }
 export declare class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     hass: HomeAssistant;

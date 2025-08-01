@@ -6,5 +6,8 @@ export declare const DEFAULT_CONFIG: {
     readonly SHOW_ICON: true;
     readonly ICON_HEIGHT: 80;
     readonly CAP_STYLE: "rounded";
+    readonly HOLD_ACTION: {
+        readonly action: "toggle";
+    };
 };
 //# sourceMappingURL=constants.d.ts.map

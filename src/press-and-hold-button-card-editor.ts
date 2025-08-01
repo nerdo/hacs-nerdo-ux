@@ -70,6 +70,10 @@ const SCHEMA = [
       }
     },
   },
+  {
+    name: 'hold_action',
+    selector: { action: {} },
+  },
 ];
 
 @customElement('press-and-hold-button-card-editor')
@@ -86,6 +90,8 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
       show_state: DEFAULT_CONFIG.SHOW_STATE,
       show_icon: DEFAULT_CONFIG.SHOW_ICON,
       icon_height: DEFAULT_CONFIG.ICON_HEIGHT,
+      cap_style: DEFAULT_CONFIG.CAP_STYLE,
+      hold_action: DEFAULT_CONFIG.HOLD_ACTION,
       ...config,
     };
   }
@@ -151,6 +157,8 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
         return 'Icon Height (px)';
       case 'cap_style':
         return 'Progress Ring Cap Style';
+      case 'hold_action':
+        return 'Hold Action';
       default:
         return schema.name;
     }
