@@ -375,7 +375,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
         border: 2px solid var(--divider-color, #e1e1e1);
         -webkit-touch-callout: none;
         -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
+        touch-action: none;
       }
 
       .button.on {
