@@ -332,7 +332,6 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
   static get styles(): CSSResultGroup {
     return css`
       ha-card {
-        cursor: pointer;
         user-select: none;
         -webkit-user-select: none;
         -moz-user-select: none;
