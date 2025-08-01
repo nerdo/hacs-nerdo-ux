@@ -10,6 +10,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write  # Required for creating releases
+  packages: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
