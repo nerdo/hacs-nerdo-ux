@@ -6,6 +6,7 @@ interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
     entity: string;
     name?: string;
     hold_duration?: number;
+    movement_tolerance?: number;
     icon?: string;
     show_name?: boolean;
     show_state?: boolean;

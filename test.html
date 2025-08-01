@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Press and Hold Button Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            background: #f5f5f5;
+            touch-action: manipulation; /* Improve touch responsiveness */
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            .config-item label {
+                display: block;
+                width: auto;
+                margin-bottom: 5px;
+            }
+            .config-item input {
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .config-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .config-item {
+            margin-bottom: 10px;
+        }
+        .config-item label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+        .config-item input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .test-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        /* Mock Home Assistant variables */
+        :root {
+            --primary-color: #03a9f4;
+            --card-background-color: #ffffff;
+            --divider-color: #e1e1e1;
+            --primary-text-color: #212121;
+            --secondary-text-color: #757575;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --error-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Press and Hold Button Card Test</h1>
+        
+        <div class="test-info">
+            <h3>Test Instructions:</h3>
+            <ul>
+                <li>Try pressing and holding the button - it should activate after the hold duration</li>
+                <li>Try pressing and moving your finger/mouse more than the movement tolerance - it should cancel</li>
+                <li>Adjust the movement tolerance and test different values</li>
+                <li>Check the log below to see events</li>
+            </ul>
+        </div>
+
+        <div class="config-panel">
+            <h3>Configuration</h3>
+            <div class="config-item">
+                <label>Hold Duration (ms):</label>
+                <input type="number" id="holdDuration" value="1500" min="500" max="10000" step="100">
+            </div>
+            <div class="config-item">
+                <label>Movement Tolerance (px):</label>
+                <input type="number" id="movementTolerance" value="15" min="1" max="50" step="1">
+            </div>
+            <div class="config-item">
+                <label>Icon Height (px):</label>
+                <input type="number" id="iconHeight" value="80" min="20" max="150" step="2">
+            </div>
+            <button onclick="updateConfig()">Update Configuration</button>
+        </div>
+
+        <div class="test-card">
+            <h3>Test Button</h3>
+            <press-and-hold-button-card id="testCard"></press-and-hold-button-card>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <!-- Load the built component -->
+    <script src="dist/hacs-nerdo-ux.js"></script>
+    
+    <script>
+        // Mock Home Assistant object
+        const mockHass = {
+            states: {
+                'switch.test': {
+                    entity_id: 'switch.test',
+                    state: 'off',
+                    attributes: {
+                        friendly_name: 'Test Switch',
+                        icon: 'mdi:lightbulb'
+                    }
+                }
+            },
+            callService: function(domain, service, data) {
+                log(`Called service: ${domain}.${service} on ${data.entity_id}`);
+                // Toggle the mock state
+                const entity = this.states[data.entity_id];
+                if (entity) {
+                    entity.state = entity.state === 'on' ? 'off' : 'on';
+                    // Trigger update
+                    setTimeout(() => {
+                        const card = document.getElementById('testCard');
+                        card.requestUpdate();
+                    }, 100);
+                }
+            }
+        };
+
+        // Initialize the card
+        function initCard() {
+            const card = document.getElementById('testCard');
+            card.hass = mockHass;
+            
+            updateConfig();
+        }
+
+        function updateConfig() {
+            const card = document.getElementById('testCard');
+            const config = {
+                type: 'custom:press-and-hold-button-card',
+                entity: 'switch.test',
+                hold_duration: parseInt(document.getElementById('holdDuration').value),
+                movement_tolerance: parseInt(document.getElementById('movementTolerance').value),
+                icon_height: parseInt(document.getElementById('iconHeight').value),
+                show_name: true,
+                show_state: true,
+                show_icon: true
+            };
+            
+            card.setConfig(config);
+            log(`Config updated: hold_duration=${config.hold_duration}ms, movement_tolerance=${config.movement_tolerance}px`);
+        }
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // Initialize when everything is ready
+        function waitForComponent() {
+            if (customElements.get('press-and-hold-button-card')) {
+                loadDefaultsFromComponent();
+                initCard();
+                setupEventListeners();
+            } else {
+                // Wait longer for mobile browsers
+                setTimeout(waitForComponent, 200);
+            }
+        }
+
+        function loadDefaultsFromComponent() {
+            // Get the default config from the component's stub config
+            const stubConfig = customElements.get('press-and-hold-button-card').getStubConfig();
+            
+            // Update the input fields with the actual defaults
+            document.getElementById('holdDuration').value = stubConfig.hold_duration;
+            document.getElementById('movementTolerance').value = stubConfig.movement_tolerance;
+            document.getElementById('iconHeight').value = stubConfig.icon_height;
+            
+            log(`Loaded defaults from component: hold_duration=${stubConfig.hold_duration}ms, movement_tolerance=${stubConfig.movement_tolerance}px`);
+        }
+
+        function setupEventListeners() {
+            document.addEventListener('pointerdown', function(e) {
+                const card = e.target.closest('press-and-hold-button-card');
+                if (card) {
+                    log(`Pointer down at (${e.clientX}, ${e.clientY})`);
+                }
+            });
+
+            document.addEventListener('pointermove', function(e) {
+                const card = e.target.closest('press-and-hold-button-card');
+                if (card) {
+                    log(`Pointer move to (${e.clientX}, ${e.clientY})`);
+                }
+            });
+
+            document.addEventListener('pointerup', function(e) {
+                const card = e.target.closest('press-and-hold-button-card');
+                if (card) {
+                    log(`Pointer up at (${e.clientX}, ${e.clientY})`);
+                }
+            });
+        }
+
+        // Start initialization after page loads
+        window.addEventListener('load', function() {
+            setTimeout(waitForComponent, 500); // Give mobile browsers more time
+        });
+    </script>
+</body>
+</html>

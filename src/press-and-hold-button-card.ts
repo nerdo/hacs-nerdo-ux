@@ -9,6 +9,7 @@ import {
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, LovelaceCard, LovelaceCardConfig } from 'custom-card-helpers';
 import { BUILD_TIMESTAMP } from './build-info';
+import { DEFAULT_CONFIG } from './constants';
 import './press-and-hold-button-card-editor';
 
 // Ensure editor is loaded
@@ -19,11 +20,13 @@ console.log(`🚀 Nerdo UX loaded, built at ${BUILD_TIMESTAMP}`);
 // Make build timestamp globally available for debugging
 (window as any).__NERDO_UX_BUILD_TIMESTAMP__ = BUILD_TIMESTAMP;
 
+
 interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
   type: string;
   entity: string;
   name?: string;
   hold_duration?: number;
+  movement_tolerance?: number;
   icon?: string;
   show_name?: boolean;
   show_state?: boolean;
@@ -68,11 +71,12 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     return {
       type: 'custom:press-and-hold-button-card',
       entity: defaultEntity,
-      hold_duration: 1500,
-      show_name: true,
-      show_state: false,
-      show_icon: true,
-      icon_height: 80,
+      hold_duration: DEFAULT_CONFIG.HOLD_DURATION,
+      movement_tolerance: DEFAULT_CONFIG.MOVEMENT_TOLERANCE,
+      show_name: DEFAULT_CONFIG.SHOW_NAME,
+      show_state: DEFAULT_CONFIG.SHOW_STATE,
+      show_icon: DEFAULT_CONFIG.SHOW_ICON,
+      icon_height: DEFAULT_CONFIG.ICON_HEIGHT,
     };
   }
 
@@ -85,11 +89,12 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     }
 
     this.config = {
-      hold_duration: 1500,
-      show_name: true,
-      show_state: false,
-      show_icon: true,
-      icon_height: 80,
+      hold_duration: DEFAULT_CONFIG.HOLD_DURATION,
+      movement_tolerance: DEFAULT_CONFIG.MOVEMENT_TOLERANCE,
+      show_name: DEFAULT_CONFIG.SHOW_NAME,
+      show_state: DEFAULT_CONFIG.SHOW_STATE,
+      show_icon: DEFAULT_CONFIG.SHOW_ICON,
+      icon_height: DEFAULT_CONFIG.ICON_HEIGHT,
       ...config,
     };
   }
@@ -204,8 +209,9 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     const deltaY = Math.abs(e.clientY - this.startY);
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
-    // If user has moved more than 10px, consider it a scroll/drag and cancel hold
-    if (distance > 10) {
+    // If user has moved more than the configured tolerance, consider it a scroll/drag and cancel hold
+    const tolerance = this.config.movement_tolerance || DEFAULT_CONFIG.MOVEMENT_TOLERANCE;
+    if (distance > tolerance) {
       this.handlePointerUp(e);
     }
   }
@@ -237,7 +243,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     this.isHolding = true;
     this.isAnimating = true;
 
-    const duration = this.config.hold_duration || 1500;
+    const duration = this.config.hold_duration || DEFAULT_CONFIG.HOLD_DURATION;
     
     // Set CSS custom property for animation duration and listen for completion
     this.updateComplete.then(() => {

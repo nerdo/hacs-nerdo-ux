@@ -8,6 +8,7 @@ import {
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helpers';
 import { BUILD_TIMESTAMP } from './build-info';
+import { DEFAULT_CONFIG } from './constants';
 
 const SCHEMA = [
   {
@@ -31,6 +32,10 @@ const SCHEMA = [
   {
     name: 'hold_duration',
     selector: { number: { min: 500, max: 10000, step: 100, unit_of_measurement: 'ms' } },
+  },
+  {
+    name: 'movement_tolerance',
+    selector: { number: { min: 1, max: 50, step: 1, unit_of_measurement: 'px' } },
   },
   {
     type: 'grid',
@@ -64,11 +69,12 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
   public setConfig(config: any): void {
     // Apply defaults to show proper values in editor
     this._config = {
-      hold_duration: 1500,
-      show_name: true,
-      show_state: false,
-      show_icon: true,
-      icon_height: 80,
+      hold_duration: DEFAULT_CONFIG.HOLD_DURATION,
+      movement_tolerance: DEFAULT_CONFIG.MOVEMENT_TOLERANCE,
+      show_name: DEFAULT_CONFIG.SHOW_NAME,
+      show_state: DEFAULT_CONFIG.SHOW_STATE,
+      show_icon: DEFAULT_CONFIG.SHOW_ICON,
+      icon_height: DEFAULT_CONFIG.ICON_HEIGHT,
       ...config,
     };
   }
@@ -122,6 +128,8 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
         return 'Icon (Optional)';
       case 'hold_duration':
         return 'Hold Duration (ms)';
+      case 'movement_tolerance':
+        return 'Movement Tolerance (px)';
       case 'show_name':
         return 'Show Name';
       case 'show_state':
