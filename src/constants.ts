@@ -6,4 +6,5 @@ export const DEFAULT_CONFIG = {
   SHOW_STATE: false,
   SHOW_ICON: true,
   ICON_HEIGHT: 80,
+  CAP_STYLE: 'rounded' as const,
 } as const;

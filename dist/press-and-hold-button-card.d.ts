@@ -12,6 +12,7 @@ interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
     show_state?: boolean;
     show_icon?: boolean;
     icon_height?: number;
+    cap_style?: 'none' | 'rounded';
     tap_action?: any;
     hold_action?: any;
 }

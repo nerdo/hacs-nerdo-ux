@@ -32,6 +32,7 @@ interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
   show_state?: boolean;
   show_icon?: boolean;
   icon_height?: number;
+  cap_style?: 'none' | 'rounded';
   tap_action?: any;
   hold_action?: any;
 }
@@ -77,6 +78,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
       show_state: DEFAULT_CONFIG.SHOW_STATE,
       show_icon: DEFAULT_CONFIG.SHOW_ICON,
       icon_height: DEFAULT_CONFIG.ICON_HEIGHT,
+      cap_style: DEFAULT_CONFIG.CAP_STYLE,
     };
   }
 
@@ -95,6 +97,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
       show_state: DEFAULT_CONFIG.SHOW_STATE,
       show_icon: DEFAULT_CONFIG.SHOW_ICON,
       icon_height: DEFAULT_CONFIG.ICON_HEIGHT,
+      cap_style: DEFAULT_CONFIG.CAP_STYLE,
       ...config,
     };
   }
@@ -159,8 +162,9 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
                   fill="none"
                   stroke="currentColor"
                   stroke-width="8"
-                  stroke-dasharray="283"
-                  stroke-dashoffset="283"
+                  stroke-dasharray="300"
+                  stroke-dashoffset="300"
+                  stroke-linecap="${this.config.cap_style === 'rounded' ? 'round' : 'butt'}"
                   transform="rotate(-90 50 50)"
                 />
               </svg>
@@ -413,7 +417,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
 
       @keyframes fillProgress {
         from {
-          stroke-dashoffset: 283;
+          stroke-dashoffset: 300;
         }
         to {
           stroke-dashoffset: 0;

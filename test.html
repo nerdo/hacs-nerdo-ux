@@ -117,6 +117,13 @@
                 <input type="number" id="iconHeight" value="80" min="20" max="150" step="2">
             </div>
             <div class="config-item">
+                <label>Cap Style:</label>
+                <select id="capStyle">
+                    <option value="rounded">Rounded</option>
+                    <option value="none">Square</option>
+                </select>
+            </div>
+            <div class="config-item">
                 <label>Test Entity:</label>
                 <select id="testEntity">
                     <option value="switch.test">Switch (switch.test)</option>
@@ -195,13 +202,14 @@
                 hold_duration: parseInt(document.getElementById('holdDuration').value),
                 movement_tolerance: parseInt(document.getElementById('movementTolerance').value),
                 icon_height: parseInt(document.getElementById('iconHeight').value),
+                cap_style: document.getElementById('capStyle').value,
                 show_name: true,
                 show_state: true,
                 show_icon: true
             };
             
             card.setConfig(config);
-            log(`Config updated: entity=${config.entity}, hold_duration=${config.hold_duration}ms, movement_tolerance=${config.movement_tolerance}px`);
+            log(`Config updated: entity=${config.entity}, hold_duration=${config.hold_duration}ms, movement_tolerance=${config.movement_tolerance}px, cap_style=${config.cap_style}`);
         }
 
         function log(message) {
@@ -234,8 +242,9 @@
             document.getElementById('holdDuration').value = stubConfig.hold_duration;
             document.getElementById('movementTolerance').value = stubConfig.movement_tolerance;
             document.getElementById('iconHeight').value = stubConfig.icon_height;
+            document.getElementById('capStyle').value = stubConfig.cap_style;
             
-            log(`Loaded defaults from component: hold_duration=${stubConfig.hold_duration}ms, movement_tolerance=${stubConfig.movement_tolerance}px`);
+            log(`Loaded defaults from component: hold_duration=${stubConfig.hold_duration}ms, movement_tolerance=${stubConfig.movement_tolerance}px, cap_style=${stubConfig.cap_style}`);
         }
 
         function setupEventListeners() {

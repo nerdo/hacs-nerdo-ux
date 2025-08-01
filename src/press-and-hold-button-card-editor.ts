@@ -59,6 +59,17 @@ const SCHEMA = [
     name: 'icon_height',
     selector: { number: { min: 20, max: 150, step: 2, unit_of_measurement: 'px' } },
   },
+  {
+    name: 'cap_style',
+    selector: { 
+      select: { 
+        options: [
+          { value: 'rounded', label: 'Rounded' },
+          { value: 'none', label: 'Square' }
+        ]
+      }
+    },
+  },
 ];
 
 @customElement('press-and-hold-button-card-editor')
@@ -138,6 +149,8 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
         return 'Show Icon';
       case 'icon_height':
         return 'Icon Height (px)';
+      case 'cap_style':
+        return 'Progress Ring Cap Style';
       default:
         return schema.name;
     }

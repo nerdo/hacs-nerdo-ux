@@ -5,5 +5,6 @@ export declare const DEFAULT_CONFIG: {
     readonly SHOW_STATE: false;
     readonly SHOW_ICON: true;
     readonly ICON_HEIGHT: 80;
+    readonly CAP_STYLE: "rounded";
 };
 //# sourceMappingURL=constants.d.ts.map
