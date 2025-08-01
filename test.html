@@ -116,6 +116,13 @@
                 <label>Icon Height (px):</label>
                 <input type="number" id="iconHeight" value="80" min="20" max="150" step="2">
             </div>
+            <div class="config-item">
+                <label>Test Entity:</label>
+                <select id="testEntity">
+                    <option value="switch.test">Switch (switch.test)</option>
+                    <option value="cover.garage_door">Garage Door (cover.garage_door)</option>
+                </select>
+            </div>
             <button onclick="updateConfig()">Update Configuration</button>
         </div>
 
@@ -141,6 +148,15 @@
                         friendly_name: 'Test Switch',
                         icon: 'mdi:lightbulb'
                     }
+                },
+                'cover.garage_door': {
+                    entity_id: 'cover.garage_door',
+                    state: 'closed',
+                    attributes: {
+                        friendly_name: 'Garage Door',
+                        icon: 'mdi:garage',
+                        device_class: 'garage'
+                    }
                 }
             },
             callService: function(domain, service, data) {
@@ -148,7 +164,11 @@
                 // Toggle the mock state
                 const entity = this.states[data.entity_id];
                 if (entity) {
-                    entity.state = entity.state === 'on' ? 'off' : 'on';
+                    if (domain === 'cover') {
+                        entity.state = entity.state === 'closed' ? 'open' : 'closed';
+                    } else {
+                        entity.state = entity.state === 'on' ? 'off' : 'on';  
+                    }
                     // Trigger update
                     setTimeout(() => {
                         const card = document.getElementById('testCard');
@@ -168,9 +188,10 @@
 
         function updateConfig() {
             const card = document.getElementById('testCard');
+            const selectedEntity = document.getElementById('testEntity').value;
             const config = {
                 type: 'custom:press-and-hold-button-card',
-                entity: 'switch.test',
+                entity: selectedEntity,
                 hold_duration: parseInt(document.getElementById('holdDuration').value),
                 movement_tolerance: parseInt(document.getElementById('movementTolerance').value),
                 icon_height: parseInt(document.getElementById('iconHeight').value),
@@ -180,13 +201,16 @@
             };
             
             card.setConfig(config);
-            log(`Config updated: hold_duration=${config.hold_duration}ms, movement_tolerance=${config.movement_tolerance}px`);
+            log(`Config updated: entity=${config.entity}, hold_duration=${config.hold_duration}ms, movement_tolerance=${config.movement_tolerance}px`);
         }
 
         function log(message) {
             const logEl = document.getElementById('log');
             const timestamp = new Date().toLocaleTimeString();
-            logEl.innerHTML += `[${timestamp}] ${message}\n`;
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logEntry.style.marginBottom = '2px';
+            logEl.appendChild(logEntry);
             logEl.scrollTop = logEl.scrollHeight;
         }
 
@@ -233,6 +257,38 @@
                 const card = e.target.closest('press-and-hold-button-card');
                 if (card) {
                     log(`Pointer up at (${e.clientX}, ${e.clientY})`);
+                }
+            });
+
+            // Handle hass-action events dispatched by the component
+            document.addEventListener('hass-action', function(event) {
+                log(`Received hass-action event: ${JSON.stringify(event.detail)}`);
+                
+                const { config, action } = event.detail;
+                
+                if (config && config.entity && mockHass) {
+                    log(`Processing hass-action: ${action} on ${config.entity}`);
+                    
+                    // Extract domain from entity_id
+                    const domain = config.entity.split('.')[0];
+                    
+                    // Determine service based on action and domain
+                    let service;
+                    if (config.action === 'toggle') {
+                        if (domain === 'cover') {
+                            // For covers, toggle between open/close
+                            const currentState = mockHass.states[config.entity].state;
+                            service = currentState === 'closed' ? 'open_cover' : 'close_cover';
+                        } else {
+                            // For switches and other domains, use toggle
+                            service = 'toggle';
+                        }
+                    } else {
+                        service = config.action || 'toggle';
+                    }
+                    
+                    // Call the mock service
+                    mockHass.callService(domain, service, { entity_id: config.entity });
                 }
             });
         }

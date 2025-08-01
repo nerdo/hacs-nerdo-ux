@@ -286,37 +286,48 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
   }
 
   private executeAction(): void {
-    if (!this.config.entity) return;
+    if (!this.config.entity) {
+      console.error('Press and Hold Button Card: No entity configured');
+      return;
+    }
 
-    // If no tap_action is configured, or it's set to toggle, handle toggle ourselves
+    const entity = this.hass.states[this.config.entity];
+    if (!entity) {
+      console.error(`Press and Hold Button Card: Entity not found: ${this.config.entity}`);
+      return;
+    }
+
+    console.log(`Press and Hold Button Card: Executing action for ${this.config.entity}`);
+
+    // Get the configured action or default to toggle
     const actionConfig = this.config.tap_action || { action: 'toggle' as const };
     
     if (actionConfig.action === 'toggle') {
-      // For toggle action, call the service directly
-      const entity = this.hass.states[this.config.entity];
-      if (!entity) return;
-
-      const domain = this.config.entity.split('.')[0];
+      // Use Home Assistant's standard action dispatch system for toggle
+      // This handles domain-specific logic automatically (covers, locks, etc.)
+      const configWithEntity = { 
+        action: 'toggle',
+        entity: this.config.entity
+      };
       
-      // Determine the appropriate service based on domain and state
-      let service: string;
-      if (domain === 'button' || domain === 'input_button' || domain === 'scene') {
-        service = 'press';
-      } else if (entity.state === 'on') {
-        service = 'turn_off';
-      } else {
-        service = 'turn_on';
-      }
-
-      this.hass.callService(domain, service, {
-        entity_id: this.config.entity,
-      });
+      console.log(`Press and Hold Button Card: Dispatching toggle action for ${this.config.entity}`);
+      
+      this.dispatchEvent(new CustomEvent('hass-action', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          config: configWithEntity,
+          action: 'tap'
+        }
+      }));
     } else {
       // For other actions, use the hass-action event system
       const configWithEntity = { ...actionConfig };
       if (!configWithEntity.entity) {
         configWithEntity.entity = this.config.entity;
       }
+      
+      console.log(`Press and Hold Button Card: Dispatching ${actionConfig.action} action for ${this.config.entity}`);
       
       this.dispatchEvent(new CustomEvent('hass-action', {
         bubbles: true,
