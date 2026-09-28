@@ -11,9 +11,11 @@
     "typecheck": "bun scripts/generate-build-info.js && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "generate-build-info": "bun scripts/generate-build-info.js",
     "deploy": "bun run build && scp dist/hacs-nerdo-ux.js $HA_HOST:/config/www/",
-    "test": "playwright test",
+    "test": "bun run test:unit && bun run test:e2e",
     "format": "biome format . --write",
-    "check": "biome check ."
+    "check": "biome check .",
+    "test:unit": "bun test src",
+    "test:e2e": "playwright test"
   },
   "keywords": [
     "home-assistant",

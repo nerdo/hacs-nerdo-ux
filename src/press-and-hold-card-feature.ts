@@ -1,5 +1,6 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { cssColor } from './css-color';
 import { HoldController } from './hold-controller';
 
 const DEFAULT_HOLD_MS = 1000;
@@ -19,42 +20,6 @@ interface FeatureConfig {
   label_off?: string;
   service?: string;
   service_data?: Record<string, unknown>;
-}
-
-// Home Assistant's theme defines --<name>-color for each named color, which is
-// how a tile resolves `color: yellow`. Anything else is used as CSS as-is.
-const THEME_COLORS = new Set([
-  'primary',
-  'accent',
-  'red',
-  'pink',
-  'purple',
-  'deep-purple',
-  'indigo',
-  'blue',
-  'light-blue',
-  'cyan',
-  'teal',
-  'green',
-  'light-green',
-  'lime',
-  'yellow',
-  'amber',
-  'orange',
-  'deep-orange',
-  'brown',
-  'light-grey',
-  'grey',
-  'dark-grey',
-  'blue-grey',
-  'black',
-  'white',
-  'disabled',
-]);
-
-export function cssColor(color: string | undefined): string {
-  if (!color) return 'var(--primary-color)';
-  return THEME_COLORS.has(color) ? `var(--${color}-color)` : color;
 }
 
 @customElement('press-and-hold-card-feature')
