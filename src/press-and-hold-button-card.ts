@@ -16,6 +16,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { BUILD_TIMESTAMP } from './build-info';
 import { DEFAULT_CONFIG } from './constants';
 import './press-and-hold-button-card-editor';
+import './press-and-hold-card-feature';
 
 // Ensure editor is loaded
 customElements.get('press-and-hold-button-card-editor') ||
