@@ -145,3 +145,16 @@ test('registers itself so the tile editor can offer it', async ({ page }) => {
   );
   expect(types).toContain('press-and-hold-card-feature');
 });
+
+const icon = (page: Page) => page.locator('press-and-hold-card-feature ha-icon');
+
+test('shows its icon when one is set', async ({ page }) => {
+  await mountFeature(page, { icon: 'mdi:power' });
+  await expect(icon(page)).toHaveCount(1);
+  expect(await icon(page).evaluate((el) => (el as any).icon)).toBe('mdi:power');
+});
+
+test('shows no icon when none is set', async ({ page }) => {
+  await mountFeature(page);
+  await expect(icon(page)).toHaveCount(0);
+});

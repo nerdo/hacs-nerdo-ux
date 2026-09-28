@@ -16,6 +16,7 @@ interface FeatureConfig {
   busy_entity?: string;
   hold_duration?: number;
   movement_tolerance?: number;
+  icon?: string;
   label_on?: string;
   label_off?: string;
   service?: string;
@@ -85,7 +86,9 @@ export class PressAndHoldCardFeature extends LitElement {
       @pointercancel=${this.hold.pointerUp}
       @pointerleave=${this.hold.pointerUp}
       @contextmenu=${(event: Event) => event.preventDefault()}
-    >${label ? html`<span class="label">${label}</span>` : ''}</div>`;
+    >${config?.icon ? html`<ha-icon class="icon" .icon=${config.icon}></ha-icon>` : ''}${
+      label ? html`<span class="label">${label}</span>` : ''
+    }</div>`;
   }
 
   static styles = css`
@@ -110,6 +113,18 @@ export class PressAndHoldCardFeature extends LitElement {
     }
     .control.off {
       background-color: transparent;
+    }
+    .icon {
+      position: relative;
+      z-index: 1;
+      color: var(--control-color);
+      --mdc-icon-size: 22px;
+    }
+    .control.on .icon {
+      color: var(--text-primary-color, #fff);
+    }
+    .icon + .label {
+      margin-left: 8px;
     }
     .label {
       position: relative;

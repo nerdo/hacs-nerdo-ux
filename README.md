@@ -157,6 +157,7 @@ features:
 | `service_data` | object | `{}` | Data for the service. No `target` is added |
 | `busy_entity` | string | - | While this entity is `on`, the control shows busy and ignores holds |
 | `label_on` / `label_off` | string | - | Text shown while `entity` is on / off. No text when omitted |
+| `icon` | string | - | Icon shown on the control (e.g. `mdi:power`). The control is blank when omitted |
 | `hold_duration` | number | `1000` | Hold duration in milliseconds |
 | `movement_tolerance` | number | `20` | Pixels the pointer may move before the hold is cancelled |
 
