@@ -64,6 +64,12 @@ test('releasing the button before its hold duration calls nothing', async ({ pag
   expect(await calls(page)).toEqual([]);
 });
 
+test('the button shows off after its entity turns off', async ({ page }) => {
+  await mountButton(page);
+  await page.evaluate(() => (window as any).setState('switch.spark', 'off'));
+  await expect(page.locator('press-and-hold-button-card .button')).toHaveClass(/\boff\b/);
+});
+
 test('moving past the movement tolerance during a hold calls nothing', async ({ page }) => {
   await mountButton(page);
   const { x, y } = await buttonCenter(page);
