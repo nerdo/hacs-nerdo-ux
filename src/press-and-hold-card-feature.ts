@@ -15,6 +15,8 @@ interface FeatureConfig {
   busy_entity?: string;
   hold_duration?: number;
   movement_tolerance?: number;
+  label_on?: string;
+  label_off?: string;
   service?: string;
   service_data?: Record<string, unknown>;
 }
@@ -106,6 +108,7 @@ export class PressAndHoldCardFeature extends LitElement {
     const isOn = entity?.state === 'on';
     const holdMs = config?.hold_duration ?? DEFAULT_HOLD_MS;
     const busy = this.isBusy;
+    const label = isOn ? config?.label_on : config?.label_off;
     return html`<div
       class="control ${isOn ? 'on' : 'off'} ${busy ? 'busy' : ''} ${this.hold.holding ? 'holding' : ''}"
       aria-busy=${busy ? 'true' : 'false'}
@@ -117,7 +120,7 @@ export class PressAndHoldCardFeature extends LitElement {
       @pointercancel=${this.hold.pointerUp}
       @pointerleave=${this.hold.pointerUp}
       @contextmenu=${(event: Event) => event.preventDefault()}
-    ></div>`;
+    >${label ? html`<span class="label">${label}</span>` : ''}</div>`;
   }
 
   static styles = css`
@@ -139,6 +142,20 @@ export class PressAndHoldCardFeature extends LitElement {
     }
     .control.off {
       background-color: transparent;
+    }
+    .control {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .label {
+      position: relative;
+      z-index: 1;
+      font-weight: 500;
+      color: var(--control-color);
+    }
+    .control.on .label {
+      color: var(--text-primary-color, #fff);
     }
     /* Busy: dimmed, with the border pulsing in the control's color. */
     .control.busy {

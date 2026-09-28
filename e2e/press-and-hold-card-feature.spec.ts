@@ -31,7 +31,7 @@ const sparkStates = {
   },
 };
 
-async function mountFeature(page: Page): Promise<void> {
+async function mountFeature(page: Page, overrides: Record<string, unknown> = {}): Promise<void> {
   await page.goto('/e2e/fixture.html');
   await page.waitForFunction(() => (window as any).fixtureReady === true);
   await page.evaluate(
@@ -42,7 +42,7 @@ async function mountFeature(page: Page): Promise<void> {
         states,
         context: { entity_id: 'sensor.arty1_outlet_power' },
       }),
-    { config: featureConfig, states: sparkStates },
+    { config: { ...featureConfig, ...overrides }, states: sparkStates },
   );
 }
 
@@ -122,4 +122,17 @@ test('while busy, holding the control shows no hold fill', async ({ page }) => {
   const fillWidth = await control(page).evaluate((el) => getComputedStyle(el, '::after').width);
   await page.mouse.up();
   expect(fillWidth).toBe('0px');
+});
+
+const labels = { label_on: 'Shut down all', label_off: 'Turn on all' };
+
+test('shows its on label while its entity is on', async ({ page }) => {
+  await mountFeature(page, labels);
+  await expect(control(page)).toHaveText('Shut down all');
+});
+
+test('shows its off label while its entity is off', async ({ page }) => {
+  await mountFeature(page, labels);
+  await page.evaluate(() => (window as any).setState('switch.arty1_outlet', 'off'));
+  await expect(control(page)).toHaveText('Turn on all');
 });
