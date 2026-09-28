@@ -171,7 +171,6 @@ service_data:
 ### Prerequisites
 
 - [Bun](https://bun.sh)
-- Python 3, which serves the test page during end-to-end tests
 
 ### Building and testing
 
