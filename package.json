@@ -7,10 +7,10 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c --watch",
-    "lint": "node scripts/generate-build-info.js && eslint src --ext .ts",
-    "typecheck": "node scripts/generate-build-info.js && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
-    "generate-build-info": "node scripts/generate-build-info.js",
-    "deploy": "pnpm run build && scp dist/hacs-nerdo-ux.js $HA_HOST:/config/www/",
+    "lint": "bun scripts/generate-build-info.js && eslint src --ext .ts",
+    "typecheck": "bun scripts/generate-build-info.js && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
+    "generate-build-info": "bun scripts/generate-build-info.js",
+    "deploy": "bun run build && scp dist/hacs-nerdo-ux.js $HA_HOST:/config/www/",
     "test": "playwright test"
   },
   "keywords": [

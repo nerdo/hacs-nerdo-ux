@@ -13,7 +13,7 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     // The fixture loads the built bundle, so every run tests the file HACS ships.
-    command: `pnpm run build && python3 -m http.server ${PORT}`,
+    command: `bun run build && python3 -m http.server ${PORT}`,
     url: `http://localhost:${PORT}/e2e/fixture.html`,
     reuseExistingServer: !process.env.CI,
   },
