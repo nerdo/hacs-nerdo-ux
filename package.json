@@ -8,9 +8,10 @@
     "build": "rollup -c",
     "dev": "rollup -c --watch",
     "lint": "node scripts/generate-build-info.js && eslint src --ext .ts",
-    "typecheck": "node scripts/generate-build-info.js && tsc --noEmit",
+    "typecheck": "node scripts/generate-build-info.js && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "generate-build-info": "node scripts/generate-build-info.js",
-    "deploy": "pnpm run build && scp dist/hacs-nerdo-ux.js $HA_HOST:/config/www/"
+    "deploy": "pnpm run build && scp dist/hacs-nerdo-ux.js $HA_HOST:/config/www/",
+    "test": "playwright test"
   },
   "keywords": [
     "home-assistant",
@@ -30,8 +31,10 @@
     "url": "https://github.com/nerdo/hacs-nerdo-ux/issues"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@rollup/plugin-node-resolve": "^15.0.0",
     "@rollup/plugin-typescript": "^11.0.0",
+    "@types/node": "^20.11.30",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
     "eslint": "^8.0.0",

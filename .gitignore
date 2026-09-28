@@ -1,3 +1,5 @@
 .claude
 node_modules
 src/build-info.ts
+test-results/
+playwright-report/

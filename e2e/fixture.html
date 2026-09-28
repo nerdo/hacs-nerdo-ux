@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nerdo UX test fixture</title>
+  <style>
+    :root {
+      --primary-color: rgb(3, 169, 244);
+      --card-background-color: rgb(255, 255, 255);
+      --divider-color: rgb(225, 225, 225);
+    }
+    body { font-family: sans-serif; padding: 24px; }
+    #mount { width: 320px; }
+  </style>
+</head>
+<body>
+  <div id="mount"></div>
+  <script src="../dist/hacs-nerdo-ux.js"></script>
+  <script>
+    // A fake Home Assistant for tests: entity states, and every service call
+    // recorded in window.calls as {domain, service, data, target}.
+    window.calls = [];
+    window.element = undefined;
+
+    function makeHass(states) {
+      return {
+        states,
+        user: { id: 'test-user' },
+        callService(domain, service, data, target) {
+          window.calls.push({ domain, service, data: data || {}, target: target || {} });
+          return Promise.resolve();
+        },
+      };
+    }
+
+    // Mounts one element. `context` is set for tile card features, which
+    // receive the parent tile's entity through it.
+    window.mount = function ({ tag, config, states, context }) {
+      const host = document.getElementById('mount');
+      host.innerHTML = '';
+      const el = document.createElement(tag);
+      el.setConfig(config);
+      if (context) el.context = context;
+      el.hass = makeHass(states);
+      host.appendChild(el);
+      window.element = el;
+      return el.updateComplete;
+    };
+
+    // Replaces one entity's state the way Home Assistant does: a new hass object.
+    window.setState = function (entityId, state) {
+      const el = window.element;
+      const states = { ...el.hass.states, [entityId]: { ...el.hass.states[entityId], state } };
+      el.hass = makeHass(states);
+      return el.updateComplete;
+    };
+
+    window.fixtureReady = true;
+  </script>
+</body>
+</html>
