@@ -36,6 +36,16 @@ A customizable Lovelace card that provides press-and-hold functionality for swit
 - **Responsive Design**: Clean, modern interface that adapts to your theme
 - **TypeScript**: Built with TypeScript for better reliability and development experience
 
+### Press and Hold Tile Feature
+
+A hold-to-act control that sits inside a Home Assistant **tile card**, under the tile's own content. Use it when a tile already shows something about a device (its power draw, say) and you want the device's switch in the same card, protected from accidental taps.
+
+- **Hold to act**: nothing happens until the hold completes. Releasing early, or moving past the tolerance, cancels it.
+- **Color shows state**: filled in its color while its entity is on, hollow while off.
+- **Busy lockout**: while a `busy_entity` is on, the control dims, pulses, and ignores holds.
+- **Optional labels**: `label_on` and `label_off` show text for each state.
+- **Its own entity**: the control acts on `entity`, which need not be the tile's entity.
+
 ## Installation
 
 ### HACS (Recommended)
@@ -120,6 +130,36 @@ service_data:
 | `icon_height` | number | `80` | Icon height in pixels (20-150) |
 | `cap_style` | string | `rounded` | Progress ring cap style: `rounded` or `none` |
 
+### Press and Hold Tile Feature
+
+Add it under a tile card's `features`:
+
+```yaml
+type: tile
+entity: sensor.arty1_outlet_power
+color: yellow
+features:
+  - type: custom:press-and-hold-card-feature
+    entity: switch.arty1_outlet
+    color: yellow
+    busy_entity: input_boolean.arty1_outlet_busy
+    service: script.nerdo_dgx_spark_toggle_power
+    service_data:
+      outlet: switch.arty1_outlet
+```
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `type` | string | **Required** | `custom:press-and-hold-card-feature` |
+| `entity` | string | **Required** | The entity whose state the control shows (filled when `on`, hollow otherwise) |
+| `color` | string | primary color | A Home Assistant color name (`yellow`, `deep-orange`, ...) or any CSS color |
+| `service` | string | - | Service to call when a hold completes (e.g. `script.my_script`) |
+| `service_data` | object | `{}` | Data for the service. No `target` is added |
+| `busy_entity` | string | - | While this entity is `on`, the control shows busy and ignores holds |
+| `label_on` / `label_off` | string | - | Text shown while `entity` is on / off. No text when omitted |
+| `hold_duration` | number | `1000` | Hold duration in milliseconds |
+| `movement_tolerance` | number | `20` | Pixels the pointer may move before the hold is cancelled |
+
 ## Usage
 
 ### Press and Hold Button Card
@@ -179,8 +219,12 @@ service_data:
 bun install
 bunx playwright install chromium
 
-# End-to-end tests (Playwright; builds the bundle first)
+# All tests: unit tests (bun test), then end-to-end tests (Playwright, which builds the bundle first)
 bun run test
+
+# Just one tier
+bun run test:unit
+bun run test:e2e
 
 # Type checking
 bun run typecheck
@@ -202,8 +246,11 @@ bun run deploy
 
 ```
 ├── src/
-│   ├── press-and-hold-button-card.ts        # Press and hold card
-│   └── press-and-hold-button-card-editor.ts # Card configuration editor
+│   ├── press-and-hold-button-card.ts        # Press and hold card (bundle entry)
+│   ├── press-and-hold-button-card-editor.ts # Card configuration editor
+│   ├── press-and-hold-card-feature.ts       # Press and hold tile feature
+│   ├── hold-controller.ts                   # Hold detection shared by both
+│   └── css-color.ts                         # Color names to theme variables
 ├── e2e/                                     # Playwright tests and their fixture page
 ├── dist/
 │   └── hacs-nerdo-ux.js                     # Build output (generated)

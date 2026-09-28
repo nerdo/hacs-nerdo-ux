@@ -9,7 +9,7 @@ This project contains a Home Assistant Lovelace card that implements press-and-h
 **Build System**: `bun build` (IIFE, minified) to `dist/hacs-nerdo-ux.js`
 **Package Manager**: bun
 **Lint and format**: Biome (`bun run lint` runs `biome check`)
-**Tests**: `@playwright/test` end-to-end tests in `e2e/` (`bun run test`)
+**Tests**: `bun test` unit tests beside the source (`src/*.test.ts`), and `@playwright/test` end-to-end tests in `e2e/`; `bun run test` runs both
 **Target**: Home Assistant Frontend Integration
 
 ## Key Architecture Decisions
