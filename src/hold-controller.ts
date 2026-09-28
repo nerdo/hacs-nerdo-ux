@@ -58,6 +58,11 @@ export class HoldController implements ReactiveController {
     this.stop();
   };
 
+  /** Cancels a hold in progress without completing it. */
+  public cancel(): void {
+    this.stop();
+  }
+
   public hostDisconnected(): void {
     this.stop();
   }

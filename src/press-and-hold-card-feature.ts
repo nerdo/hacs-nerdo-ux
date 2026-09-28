@@ -125,6 +125,9 @@ export class PressAndHoldCardFeature extends LitElement {
 
   static styles = css`
     .control {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       position: relative;
       overflow: hidden;
       cursor: pointer;
@@ -142,11 +145,6 @@ export class PressAndHoldCardFeature extends LitElement {
     }
     .control.off {
       background-color: transparent;
-    }
-    .control {
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
     .label {
       position: relative;

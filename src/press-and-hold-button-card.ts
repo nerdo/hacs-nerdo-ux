@@ -15,6 +15,7 @@ import {
 import { customElement, property, state } from 'lit/decorators.js';
 import { BUILD_TIMESTAMP } from './build-info';
 import { DEFAULT_CONFIG } from './constants';
+import { HoldController } from './hold-controller';
 import './press-and-hold-button-card-editor';
 import './press-and-hold-card-feature';
 
@@ -48,8 +49,12 @@ interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
 export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private config!: PressAndHoldButtonCardConfig;
-  @state() private isHolding = false;
-  @state() private isAnimating = false;
+
+  private readonly hold = new HoldController(this, {
+    duration: () => this.config.hold_duration || DEFAULT_CONFIG.HOLD_DURATION,
+    tolerance: () => this.config.movement_tolerance || DEFAULT_CONFIG.MOVEMENT_TOLERANCE,
+    onComplete: () => this.executeAction(),
+  });
 
   public static get buildTimestamp(): string {
     return BUILD_TIMESTAMP;
@@ -58,10 +63,6 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
   public get buildTimestamp(): string {
     return BUILD_TIMESTAMP;
   }
-
-  private holdTimer?: number;
-  private startY?: number;
-  private startX?: number;
 
   public static getStubConfig(hass?: HomeAssistant): PressAndHoldButtonCardConfig {
     // Find a real switchable entity if hass is available
@@ -137,21 +138,26 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     const icon = this.config.icon || entity.attributes.icon || 'mdi:power';
     const isOn = entity.state === 'on';
     const iconHeight = this.config.icon_height || 80;
+    const holding = this.hold.holding;
+    const holdMs = this.config.hold_duration || DEFAULT_CONFIG.HOLD_DURATION;
 
     return html`
       <ha-card>
         <div class="card-content">
           <div
-            class="button ${isOn ? 'on' : 'off'} ${this.isHolding ? 'holding' : ''}"
+            class="button ${isOn ? 'on' : 'off'} ${holding ? 'holding' : ''}"
             style="--icon-height: ${iconHeight}px"
             @pointerdown=${this.handlePointerDown}
-            @pointerup=${(e: PointerEvent) => this.handlePointerUp(e)}
-            @pointerleave=${(e: PointerEvent) => this.handlePointerUp(e)}
-            @pointercancel=${(e: PointerEvent) => this.handlePointerUp(e)}
-            @pointermove=${this.handlePointerMove}
-            @contextmenu=${this.handleContextMenu}
+            @pointerup=${this.hold.pointerUp}
+            @pointerleave=${this.hold.pointerUp}
+            @pointercancel=${this.hold.pointerUp}
+            @pointermove=${this.hold.pointerMove}
+            @contextmenu=${(e: Event) => e.preventDefault()}
           >
-            <div class="progress-ring ${this.isHolding ? 'active' : ''} ${this.isAnimating ? 'animating' : ''} ${isOn ? 'turning-off' : 'turning-on'}">
+            <div
+              class="progress-ring ${holding ? 'active animating' : ''} ${isOn ? 'turning-off' : 'turning-on'}"
+              style="--hold-duration: ${holdMs}ms"
+            >
               <svg class="progress-svg" viewBox="0 0 100 100">
                 <circle
                   class="progress-background"
@@ -196,105 +202,11 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     `;
   }
 
-  private handlePointerDown(e: PointerEvent): void {
-    e.preventDefault();
+  // Keeps the press from reaching whatever is under the card.
+  private readonly handlePointerDown = (e: PointerEvent): void => {
     e.stopPropagation();
-
-    // Store initial touch position for scroll detection
-    this.startX = e.clientX;
-    this.startY = e.clientY;
-
-    // Set pointer capture to ensure we get all pointer events
-    (e.target as Element).setPointerCapture(e.pointerId);
-
-    this.startHold();
-  }
-
-  private handlePointerMove(e: PointerEvent): void {
-    if (!this.isHolding || this.startX === undefined || this.startY === undefined) {
-      return;
-    }
-
-    // Calculate movement distance
-    const deltaX = Math.abs(e.clientX - this.startX);
-    const deltaY = Math.abs(e.clientY - this.startY);
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-    // If user has moved more than the configured tolerance, consider it a scroll/drag and cancel hold
-    const tolerance = this.config.movement_tolerance || DEFAULT_CONFIG.MOVEMENT_TOLERANCE;
-    if (distance > tolerance) {
-      this.handlePointerUp(e);
-    }
-  }
-
-  private handlePointerUp(e?: PointerEvent): void {
-    if (e) {
-      // Release pointer capture
-      try {
-        (e.target as Element).releasePointerCapture(e.pointerId);
-      } catch (_err) {
-        // Ignore errors if pointer capture is already released
-      }
-    }
-
-    // Reset position tracking
-    this.startX = undefined;
-    this.startY = undefined;
-
-    this.stopHold();
-  }
-
-  private handleContextMenu(e: Event): void {
-    e.preventDefault();
-  }
-
-  private startHold(): void {
-    if (this.isHolding) return;
-
-    this.isHolding = true;
-    this.isAnimating = true;
-
-    const duration = this.config.hold_duration || DEFAULT_CONFIG.HOLD_DURATION;
-
-    // Set CSS custom property for animation duration and listen for completion
-    this.updateComplete.then(() => {
-      const progressRing = this.shadowRoot?.querySelector('.progress-ring') as HTMLElement;
-      if (progressRing) {
-        progressRing.style.setProperty('--hold-duration', `${duration}ms`);
-
-        // Listen for animation completion
-        const handleAnimationEnd = (event: AnimationEvent) => {
-          if (event.animationName === 'fillProgress' && this.isHolding) {
-            this.executeAction();
-            this.stopHold();
-          }
-          progressRing.removeEventListener('animationend', handleAnimationEnd);
-        };
-
-        progressRing.addEventListener('animationend', handleAnimationEnd);
-      }
-    });
-
-    // Backup timer in case animation fails
-    this.holdTimer = window.setTimeout(() => {
-      if (this.isHolding) {
-        this.executeAction();
-        this.stopHold();
-      }
-    }, duration + 200);
-  }
-
-  private stopHold(): void {
-    if (!this.isHolding) return;
-
-    this.isHolding = false;
-    this.isAnimating = false;
-
-    if (this.holdTimer) {
-      clearTimeout(this.holdTimer);
-      this.holdTimer = undefined;
-    }
-  }
+    this.hold.pointerDown(e);
+  };
 
   private executeAction(): void {
     if (!this.config.entity) {
@@ -598,13 +510,8 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     super.updated(changedProps);
 
     if (changedProps.has('config')) {
-      this.stopHold();
+      this.hold.cancel();
     }
-  }
-
-  disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this.stopHold();
   }
 }
 
