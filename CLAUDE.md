@@ -99,6 +99,7 @@ The editor uses dynamic schema building to show/hide fields based on action sele
 ### Release Process
 1. Run `bun run test`, `bun run typecheck`, `bun run lint`, then `bun run build`
 2. Try the card by hand in test.html
+3. **Preview the build on the live Home Assistant before publishing.** The user's rule: nothing is published untried. The method lives in the user's config repo: `homeassistant-configs/docs/runbooks/preview-an-unreleased-lovelace-plugin.md`
 3. Commit changes with proper version control
 4. Tag release for HACS distribution
 
