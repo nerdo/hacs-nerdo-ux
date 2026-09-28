@@ -2,12 +2,12 @@ import {
   LitElement,
   html,
   css,
-  CSSResultGroup,
-  TemplateResult,
-  PropertyValues,
+  type CSSResultGroup,
+  type TemplateResult,
+  type PropertyValues,
 } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { HomeAssistant, LovelaceCard, LovelaceCardConfig, handleAction } from 'custom-card-helpers';
+import { type HomeAssistant, type LovelaceCard, type LovelaceCardConfig, handleAction } from 'custom-card-helpers';
 import { BUILD_TIMESTAMP } from './build-info';
 import { DEFAULT_CONFIG } from './constants';
 import './press-and-hold-button-card-editor';
@@ -228,7 +228,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
       // Release pointer capture
       try {
         (e.target as Element).releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch (_err) {
         // Ignore errors if pointer capture is already released
       }
     }

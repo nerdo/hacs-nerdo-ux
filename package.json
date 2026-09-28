@@ -7,11 +7,13 @@
   "scripts": {
     "build": "bun scripts/generate-build-info.js && bun build src/press-and-hold-button-card.ts --target browser --format iife --minify --outfile dist/hacs-nerdo-ux.js",
     "dev": "bun scripts/generate-build-info.js && bun build src/press-and-hold-button-card.ts --target browser --format iife --watch --outfile dist/hacs-nerdo-ux.js",
-    "lint": "bun scripts/generate-build-info.js && eslint src --ext .ts",
+    "lint": "bun scripts/generate-build-info.js && biome lint .",
     "typecheck": "bun scripts/generate-build-info.js && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "generate-build-info": "bun scripts/generate-build-info.js",
     "deploy": "bun run build && scp dist/hacs-nerdo-ux.js $HA_HOST:/config/www/",
-    "test": "playwright test"
+    "test": "playwright test",
+    "format": "biome format . --write",
+    "check": "biome check ."
   },
   "keywords": [
     "home-assistant",
@@ -31,11 +33,9 @@
     "url": "https://github.com/nerdo/hacs-nerdo-ux/issues"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.14",
     "@playwright/test": "^1.63.0",
     "@types/node": "^20.11.30",
-    "@typescript-eslint/eslint-plugin": "^5.0.0",
-    "@typescript-eslint/parser": "^5.0.0",
-    "eslint": "^8.0.0",
     "typescript": "^4.9.0"
   },
   "dependencies": {

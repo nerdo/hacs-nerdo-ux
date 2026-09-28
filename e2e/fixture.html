@@ -35,7 +35,7 @@
 
     // Mounts one element. `context` is set for tile card features, which
     // receive the parent tile's entity through it.
-    window.mount = function ({ tag, config, states, context }) {
+    window.mount = ({ tag, config, states, context }) => {
       const host = document.getElementById('mount');
       host.innerHTML = '';
       const el = document.createElement(tag);
@@ -48,7 +48,7 @@
     };
 
     // Replaces one entity's state the way Home Assistant does: a new hass object.
-    window.setState = function (entityId, state) {
+    window.setState = (entityId, state) => {
       const el = window.element;
       const states = { ...el.hass.states, [entityId]: { ...el.hass.states[entityId], state } };
       el.hass = makeHass(states);

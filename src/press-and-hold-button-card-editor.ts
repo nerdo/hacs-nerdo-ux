@@ -2,11 +2,11 @@ import {
   LitElement,
   html,
   css,
-  CSSResultGroup,
-  TemplateResult,
+  type CSSResultGroup,
+  type TemplateResult,
 } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helpers';
+import { type HomeAssistant, fireEvent, type LovelaceCardEditor } from 'custom-card-helpers';
 import { BUILD_TIMESTAMP } from './build-info';
 import { DEFAULT_CONFIG } from './constants';
 
@@ -161,7 +161,7 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
     
     // Update the hold_action options with dynamic default label
     const holdActionField = baseSchema.find(field => field.name === 'hold_action');
-    if (holdActionField && holdActionField.selector) {
+    if (holdActionField?.selector) {
       const defaultLabel = this._getDefaultActionLabel(entityId);
       (holdActionField.selector as any).select.options[0].label = defaultLabel;
     }

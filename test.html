@@ -89,9 +89,9 @@
         
         /* Add visual feedback for button press */
         press-and-hold-button-card[data-state="active"] .button {
-            background: var(--success-color) !important;
-            border-color: var(--success-color) !important;
-            color: white !important;
+            background: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
             transform: scale(0.98);
         }
     </style>
@@ -121,26 +121,26 @@
         <div class="config-panel">
             <h3>Configuration</h3>
             <div class="config-item">
-                <label>Hold Duration (ms):</label>
+                <label for="holdDuration">Hold Duration (ms):</label>
                 <input type="number" id="holdDuration" value="1500" min="500" max="10000" step="100">
             </div>
             <div class="config-item">
-                <label>Movement Tolerance (px):</label>
+                <label for="movementTolerance">Movement Tolerance (px):</label>
                 <input type="number" id="movementTolerance" value="15" min="1" max="50" step="1">
             </div>
             <div class="config-item">
-                <label>Icon Height (px):</label>
+                <label for="iconHeight">Icon Height (px):</label>
                 <input type="number" id="iconHeight" value="80" min="20" max="150" step="2">
             </div>
             <div class="config-item">
-                <label>Cap Style:</label>
+                <label for="capStyle">Cap Style:</label>
                 <select id="capStyle">
                     <option value="rounded">Rounded</option>
                     <option value="none">Square</option>
                 </select>
             </div>
             <div class="config-item">
-                <label>Test Entity:</label>
+                <label for="testEntity">Test Entity:</label>
                 <select id="testEntity">
                     <option value="button.ratgdo_door">Button (button.ratgdo_door)</option>
                     <option value="switch.test">Switch (switch.test)</option>
@@ -149,7 +149,7 @@
                 </select>
             </div>
             <div class="config-item">
-                <label>Hold Action:</label>
+                <label for="holdAction">Hold Action:</label>
                 <select id="holdAction">
                     <option value="default">Default (Smart)</option>
                     <option value="toggle">Toggle</option>
@@ -158,14 +158,14 @@
                 </select>
             </div>
             <div class="config-item" id="serviceConfig" style="display: none;">
-                <label>Service:</label>
+                <label for="serviceInput">Service:</label>
                 <input type="text" id="serviceInput" placeholder="e.g., light.turn_on">
             </div>
             <div class="config-item" id="serviceDataConfig" style="display: none;">
-                <label>Service Data (JSON):</label>
+                <label for="serviceDataInput">Service Data (JSON):</label>
                 <input type="text" id="serviceDataInput" placeholder='{"brightness": 255}'>
             </div>
-            <button onclick="updateConfig()">Update Configuration</button>
+            <button type="button" onclick="updateConfig()">Update Configuration</button>
         </div>
 
         <div class="test-card">
@@ -298,9 +298,9 @@
             const config = {
                 type: 'custom:press-and-hold-button-card',
                 entity: selectedEntity,
-                hold_duration: parseInt(document.getElementById('holdDuration').value),
-                movement_tolerance: parseInt(document.getElementById('movementTolerance').value),
-                icon_height: parseInt(document.getElementById('iconHeight').value),
+                hold_duration: parseInt(document.getElementById('holdDuration').value, 10),
+                movement_tolerance: parseInt(document.getElementById('movementTolerance').value, 10),
+                icon_height: parseInt(document.getElementById('iconHeight').value, 10),
                 cap_style: document.getElementById('capStyle').value,
                 hold_action: holdAction,
                 show_name: true,
@@ -366,7 +366,7 @@
 
         function setupEventListeners() {
             // Show/hide service config based on action selection
-            document.getElementById('holdAction').addEventListener('change', function(e) {
+            document.getElementById('holdAction').addEventListener('change', (e) => {
                 const serviceConfig = document.getElementById('serviceConfig');
                 const serviceDataConfig = document.getElementById('serviceDataConfig');
                 
@@ -380,14 +380,14 @@
             });
 
             // Log pointer events for debugging
-            document.addEventListener('pointerdown', function(e) {
+            document.addEventListener('pointerdown', (e) => {
                 const card = e.target.closest('press-and-hold-button-card');
                 if (card) {
                     log(`Pointer down at (${e.clientX}, ${e.clientY})`);
                 }
             });
 
-            document.addEventListener('pointermove', function(e) {
+            document.addEventListener('pointermove', (e) => {
                 const card = e.target.closest('press-and-hold-button-card');
                 if (card && e.target.closest('.button')) {
                     // Only log moves when actually over the button
@@ -395,7 +395,7 @@
                 }
             });
 
-            document.addEventListener('pointerup', function(e) {
+            document.addEventListener('pointerup', (e) => {
                 const card = e.target.closest('press-and-hold-button-card');
                 if (card) {
                     log(`Pointer up at (${e.clientX}, ${e.clientY})`);
@@ -403,7 +403,7 @@
             });
 
             // Mock handleAction function to intercept calls from custom-card-helpers
-            window.handleAction = function(element, hass, config, actionType) {
+            window.handleAction = (_element, _hass, config, actionType) => {
                 log(`handleAction called with actionType: ${actionType}`);
                 log(`Action config: ${JSON.stringify(config)}`);
                 
@@ -425,7 +425,7 @@
                                 const serviceData = { ...(config.hold_action.service_data || {}) };
                                 
                                 // Handle target entity properly
-                                if (config.hold_action.target && config.hold_action.target.entity_id) {
+                                if (config.hold_action.target?.entity_id) {
                                     serviceData.entity_id = config.hold_action.target.entity_id;
                                 } else if (entity && !serviceData.entity_id) {
                                     // Fallback to config entity if no target specified
@@ -448,7 +448,7 @@
         }
 
         // Start initialization after page loads
-        window.addEventListener('load', function() {
+        window.addEventListener('load', () => {
             setTimeout(waitForComponent, 500); // Give mobile browsers more time
         });
     </script>
