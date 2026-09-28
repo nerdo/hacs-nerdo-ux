@@ -96,3 +96,10 @@ test('moving past the movement tolerance during a hold calls nothing', async ({ 
   await page.mouse.up();
   expect(await calls(page)).toEqual([]);
 });
+
+test('the control is hollow while its entity is off', async ({ page }) => {
+  await mountFeature(page);
+  await page.evaluate(() => (window as any).setState('switch.arty1_outlet', 'off'));
+  await expect(control(page)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(control(page)).toHaveCSS('border-top-color', YELLOW);
+});
