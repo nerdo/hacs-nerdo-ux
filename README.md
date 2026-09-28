@@ -170,29 +170,33 @@ service_data:
 
 ### Prerequisites
 
-- Node.js 16+
-- pnpm
+- [Bun](https://bun.sh)
+- Python 3, which serves the test page during end-to-end tests
 
-### Building
+### Building and testing
 
 ```bash
-# Install dependencies
-pnpm install
+# Install dependencies, and the browser the end-to-end tests drive
+bun install
+bunx playwright install chromium
 
-# Build for production
-pnpm run build
-
-# Development with watch mode
-pnpm run dev
+# End-to-end tests (Playwright; builds the bundle first)
+bun run test
 
 # Type checking
-pnpm run typecheck
+bun run typecheck
 
-# Linting
-pnpm run lint
+# Lint and format check (Biome)
+bun run lint
+
+# Build for production
+bun run build
+
+# Rebuild on change
+bun run dev
 
 # Deploy to Home Assistant (requires HA_HOST environment variable)
-pnpm run deploy
+bun run deploy
 ```
 
 ### Project Structure
@@ -201,13 +205,17 @@ pnpm run deploy
 ├── src/
 │   ├── press-and-hold-button-card.ts        # Press and hold card
 │   └── press-and-hold-button-card-editor.ts # Card configuration editor
+├── e2e/                                     # Playwright tests and their fixture page
 ├── dist/
 │   └── hacs-nerdo-ux.js                     # Build output (generated)
+├── biome.json                               # Lint and format config
+├── playwright.config.ts                     # End-to-end test config
 ├── hacs.json                                # HACS configuration
 ├── info.md                                  # HACS info
-├── package.json                             # Node dependencies
-├── tsconfig.json                            # TypeScript config
-├── rollup.config.js                         # Build configuration
+├── package.json                             # Dependencies and scripts
+├── tsconfig.json                            # TypeScript config for src
+├── tsconfig.e2e.json                        # TypeScript config for the tests
+├── test.html                                # Manual test page
 └── README.md                                # This file
 ```
 

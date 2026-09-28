@@ -5,9 +5,11 @@ This project contains a Home Assistant Lovelace card that implements press-and-h
 ## Project Overview
 
 **Type**: Home Assistant Custom Lovelace Card
-**Framework**: LitElement (Lit 2.0) with TypeScript
-**Build System**: Rollup with TypeScript plugin
-**Package Manager**: pnpm
+**Framework**: Lit 3 with TypeScript 7 (legacy decorators)
+**Build System**: `bun build` (IIFE, minified) to `dist/hacs-nerdo-ux.js`
+**Package Manager**: bun
+**Lint and format**: Biome (`bun run lint` runs `biome check`)
+**Tests**: `@playwright/test` end-to-end tests in `e2e/` (`bun run test`)
 **Target**: Home Assistant Frontend Integration
 
 ## Key Architecture Decisions
@@ -51,18 +53,16 @@ test.html                                  # Standalone test environment
 
 ### Key Dependencies
 - **lit**: Web Components framework
-- **custom-card-helpers**: Home Assistant Lovelace integration utilities
-- **rollup**: Build system with TypeScript support
+- **custom-card-helpers**: Home Assistant Lovelace integration utilities. Its `handleAction` adds the card's entity as the `target` of every call-service action.
 
 ### Build Configuration
-- **Source Maps**: Generated for debugging
-- **TypeScript**: Strict mode enabled with DOM libs
-- **Rollup Plugins**: Node resolve, TypeScript compilation, Terser minification
+- **Bundler**: `bun build --target browser --format iife --minify`
+- **TypeScript**: Strict mode, `experimentalDecorators` with `useDefineForClassFields: false`, which Lit's reactive properties need. The state-change test in `e2e/` guards this.
 
 ### Testing
-- **test.html**: Complete mock Home Assistant environment
-- **Mock Services**: Simulates Home Assistant state management and service calls
-- **Visual Testing**: Screenshots and browser automation with Playwright
+- **e2e/**: `@playwright/test` specs, run against the built bundle through `e2e/fixture.html`, a page served over HTTP with a fake `hass` that records every service call in `window.calls`.
+- **Proving a new test can fail**: before a test for existing behavior counts, it is run once against a deliberately wrong stub and seen failing.
+- **test.html**: a manual harness with form controls, for trying the card by hand.
 
 ## Implementation Notes
 
@@ -97,8 +97,8 @@ The editor uses dynamic schema building to show/hide fields based on action sele
 - **Built JavaScript**: Single file distribution (`dist/hacs-nerdo-ux.js`)
 
 ### Release Process
-1. Build production version: `pnpm run build`
-2. Test functionality with test.html
+1. Run `bun run test`, `bun run typecheck`, `bun run lint`, then `bun run build`
+2. Try the card by hand in test.html
 3. Commit changes with proper version control
 4. Tag release for HACS distribution
 
