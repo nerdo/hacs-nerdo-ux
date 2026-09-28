@@ -5,8 +5,8 @@
   "main": "dist/hacs-nerdo-ux.js",
   "type": "module",
   "scripts": {
-    "build": "rollup -c",
-    "dev": "rollup -c --watch",
+    "build": "bun scripts/generate-build-info.js && bun build src/press-and-hold-button-card.ts --target browser --format iife --minify --outfile dist/hacs-nerdo-ux.js",
+    "dev": "bun scripts/generate-build-info.js && bun build src/press-and-hold-button-card.ts --target browser --format iife --watch --outfile dist/hacs-nerdo-ux.js",
     "lint": "bun scripts/generate-build-info.js && eslint src --ext .ts",
     "typecheck": "bun scripts/generate-build-info.js && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "generate-build-info": "bun scripts/generate-build-info.js",
@@ -32,15 +32,10 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "@rollup/plugin-node-resolve": "^15.0.0",
-    "@rollup/plugin-typescript": "^11.0.0",
     "@types/node": "^20.11.30",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
     "eslint": "^8.0.0",
-    "rollup": "^3.0.0",
-    "rollup-plugin-terser": "^7.0.0",
-    "tslib": "^2.0.0",
     "typescript": "^4.9.0"
   },
   "dependencies": {
