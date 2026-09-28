@@ -103,3 +103,23 @@ test('the control is hollow while its entity is off', async ({ page }) => {
   await expect(control(page)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(control(page)).toHaveCSS('border-top-color', YELLOW);
 });
+
+test('while busy, the control is marked busy and disabled', async ({ page }) => {
+  await mountFeature(page);
+  await page.evaluate(() => (window as any).setState('input_boolean.arty1_outlet_busy', 'on'));
+  await expect(control(page)).toHaveAttribute('aria-busy', 'true');
+  await expect(control(page)).toHaveAttribute('aria-disabled', 'true');
+});
+
+test('while busy, holding the control shows no hold fill', async ({ page }) => {
+  await mountFeature(page);
+  await page.evaluate(() => (window as any).setState('input_boolean.arty1_outlet_busy', 'on'));
+  const box = await control(page).boundingBox();
+  if (!box) throw new Error('The control has no bounding box');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(HOLD_MS * 0.6);
+  const fillWidth = await control(page).evaluate((el) => getComputedStyle(el, '::after').width);
+  await page.mouse.up();
+  expect(fillWidth).toBe('0px');
+});

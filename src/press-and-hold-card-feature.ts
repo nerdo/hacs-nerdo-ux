@@ -71,6 +71,15 @@ export class PressAndHoldCardFeature extends LitElement {
     this.config = config;
   }
 
+  // While busy, a hold does not start at all, so no fill shows.
+  private readonly handlePointerDown = (event: PointerEvent): void => {
+    if (this.isBusy) {
+      event.preventDefault();
+      return;
+    }
+    this.hold.pointerDown(event);
+  };
+
   // While the busy entity is on, a hold does nothing.
   private busyGate(): void {
     if (this.isBusy) return;
@@ -96,10 +105,13 @@ export class PressAndHoldCardFeature extends LitElement {
     const entity = config && this.hass?.states[config.entity];
     const isOn = entity?.state === 'on';
     const holdMs = config?.hold_duration ?? DEFAULT_HOLD_MS;
+    const busy = this.isBusy;
     return html`<div
-      class="control ${isOn ? 'on' : 'off'} ${this.hold.holding ? 'holding' : ''}"
+      class="control ${isOn ? 'on' : 'off'} ${busy ? 'busy' : ''} ${this.hold.holding ? 'holding' : ''}"
+      aria-busy=${busy ? 'true' : 'false'}
+      aria-disabled=${busy ? 'true' : 'false'}
       style="--control-color: ${cssColor(config?.color)}; --hold-duration: ${holdMs}ms"
-      @pointerdown=${this.hold.pointerDown}
+      @pointerdown=${this.handlePointerDown}
       @pointermove=${this.hold.pointerMove}
       @pointerup=${this.hold.pointerUp}
       @pointercancel=${this.hold.pointerUp}
@@ -127,6 +139,17 @@ export class PressAndHoldCardFeature extends LitElement {
     }
     .control.off {
       background-color: transparent;
+    }
+    /* Busy: dimmed, with the border pulsing in the control's color. */
+    .control.busy {
+      cursor: progress;
+      opacity: 0.5;
+      animation: busy-pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes busy-pulse {
+      50% {
+        border-color: transparent;
+      }
     }
     /* The hold fill sweeps across the control for the hold duration. */
     .control::after {
