@@ -7,7 +7,7 @@
   "scripts": {
     "build": "bun scripts/generate-build-info.js && bun build src/press-and-hold-button-card.ts --target browser --format iife --minify --outfile dist/hacs-nerdo-ux.js",
     "dev": "bun scripts/generate-build-info.js && bun build src/press-and-hold-button-card.ts --target browser --format iife --watch --outfile dist/hacs-nerdo-ux.js",
-    "lint": "bun scripts/generate-build-info.js && biome lint .",
+    "lint": "bun scripts/generate-build-info.js && biome check .",
     "typecheck": "bun scripts/generate-build-info.js && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "generate-build-info": "bun scripts/generate-build-info.js",
     "deploy": "bun run build && scp dist/hacs-nerdo-ux.js $HA_HOST:/config/www/",

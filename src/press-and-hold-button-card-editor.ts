@@ -1,12 +1,6 @@
-import {
-  LitElement,
-  html,
-  css,
-  type CSSResultGroup,
-  type TemplateResult,
-} from 'lit';
+import { fireEvent, type HomeAssistant, type LovelaceCardEditor } from 'custom-card-helpers';
+import { type CSSResultGroup, css, html, LitElement, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { type HomeAssistant, fireEvent, type LovelaceCardEditor } from 'custom-card-helpers';
 import { BUILD_TIMESTAMP } from './build-info';
 import { DEFAULT_CONFIG } from './constants';
 
@@ -31,16 +25,16 @@ const BASE_SCHEMA: any[] = [
   },
   {
     name: 'hold_action',
-    selector: { 
+    selector: {
       select: {
         mode: 'dropdown',
         options: [
           { value: 'default', label: 'Default' },
           { value: 'toggle', label: 'Toggle' },
           { value: 'more-info', label: 'More Info' },
-          { value: 'call-service', label: 'Call Service' }
-        ]
-      }
+          { value: 'call-service', label: 'Call Service' },
+        ],
+      },
     },
   },
 ];
@@ -89,14 +83,14 @@ const REMAINING_SCHEMA: any[] = [
   },
   {
     name: 'cap_style',
-    selector: { 
-      select: { 
+    selector: {
+      select: {
         mode: 'dropdown',
         options: [
           { value: 'rounded', label: 'Rounded' },
-          { value: 'none', label: 'Square' }
-        ]
-      }
+          { value: 'none', label: 'Square' },
+        ],
+      },
     },
   },
 ];
@@ -129,7 +123,7 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
     // Ensure we have a real entity if none is selected
     const data = { ...this._config };
     if (!data.entity || data.entity === 'switch.example') {
-      const switchableEntities = Object.keys(this.hass.states).filter(entityId => {
+      const switchableEntities = Object.keys(this.hass.states).filter((entityId) => {
         const domain = entityId.split('.')[0];
         return ['switch', 'light', 'input_boolean'].includes(domain);
       });
@@ -158,22 +152,22 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
   private _buildSchema(holdAction: string, entityId?: string) {
     // Build base schema with dynamic default label
     const baseSchema = [...BASE_SCHEMA];
-    
+
     // Update the hold_action options with dynamic default label
-    const holdActionField = baseSchema.find(field => field.name === 'hold_action');
+    const holdActionField = baseSchema.find((field) => field.name === 'hold_action');
     if (holdActionField?.selector) {
       const defaultLabel = this._getDefaultActionLabel(entityId);
       (holdActionField.selector as any).select.options[0].label = defaultLabel;
     }
-    
+
     // Add service fields only when call-service is selected
     if (holdAction === 'call-service') {
       baseSchema.push(...SERVICE_FIELDS);
     }
-    
+
     // Add the remaining fields
     baseSchema.push(...REMAINING_SCHEMA);
-    
+
     return baseSchema;
   }
 
@@ -188,7 +182,7 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
     }
 
     const domain = entity.entity_id.split('.')[0];
-    
+
     switch (domain) {
       case 'button':
         return 'Default (Press)';
@@ -204,7 +198,7 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
 
   private _valueChanged(ev: CustomEvent): void {
     const formData = ev.detail.value;
-    
+
     if (!formData || !this.hass) {
       return;
     }
@@ -244,7 +238,6 @@ export class PressAndHoldButtonCardEditor extends LitElement implements Lovelace
         return schema.name;
     }
   };
-
 
   static get styles(): CSSResultGroup {
     return css`

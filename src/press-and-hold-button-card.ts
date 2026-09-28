@@ -1,25 +1,30 @@
 import {
-  LitElement,
-  html,
-  css,
+  type HomeAssistant,
+  handleAction,
+  type LovelaceCard,
+  type LovelaceCardConfig,
+} from 'custom-card-helpers';
+import {
   type CSSResultGroup,
-  type TemplateResult,
+  css,
+  html,
+  LitElement,
   type PropertyValues,
+  type TemplateResult,
 } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { type HomeAssistant, type LovelaceCard, type LovelaceCardConfig, handleAction } from 'custom-card-helpers';
 import { BUILD_TIMESTAMP } from './build-info';
 import { DEFAULT_CONFIG } from './constants';
 import './press-and-hold-button-card-editor';
 
 // Ensure editor is loaded
-customElements.get('press-and-hold-button-card-editor') || import('./press-and-hold-button-card-editor');
+customElements.get('press-and-hold-button-card-editor') ||
+  import('./press-and-hold-button-card-editor');
 
 console.log(`🚀 Nerdo UX loaded, built at ${BUILD_TIMESTAMP}`);
 
 // Make build timestamp globally available for debugging
 (window as any).__NERDO_UX_BUILD_TIMESTAMP__ = BUILD_TIMESTAMP;
-
 
 interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
   type: string;
@@ -34,7 +39,7 @@ interface PressAndHoldButtonCardConfig extends LovelaceCardConfig {
   icon_height?: number;
   cap_style?: 'none' | 'rounded';
   hold_action?: 'default' | 'toggle' | 'more-info' | 'call-service';
-  service?: string; // Service to call (e.g., "light.turn_on") 
+  service?: string; // Service to call (e.g., "light.turn_on")
   service_data?: Record<string, unknown>; // Service arguments as JSON object
 }
 
@@ -44,15 +49,15 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
   @state() private config!: PressAndHoldButtonCardConfig;
   @state() private isHolding = false;
   @state() private isAnimating = false;
-  
+
   public static get buildTimestamp(): string {
     return BUILD_TIMESTAMP;
   }
-  
+
   public get buildTimestamp(): string {
     return BUILD_TIMESTAMP;
   }
-  
+
   private holdTimer?: number;
   private startY?: number;
   private startX?: number;
@@ -61,7 +66,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     // Find a real switchable entity if hass is available
     let defaultEntity = 'switch.example';
     if (hass) {
-      const switchableEntities = Object.keys(hass.states).filter(entityId => {
+      const switchableEntities = Object.keys(hass.states).filter((entityId) => {
         const domain = entityId.split('.')[0];
         return ['switch', 'light', 'input_boolean'].includes(domain);
       });
@@ -172,21 +177,19 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
                 />
               </svg>
             </div>
-            ${this.config.show_icon !== false
-              ? html`
+            ${
+              this.config.show_icon !== false
+                ? html`
                   <ha-icon
                     class="icon"
                     .icon=${icon}
                   ></ha-icon>
                 `
-              : ''}
+                : ''
+            }
           </div>
-          ${this.config.show_name !== false
-            ? html`<div class="name">${name}</div>`
-            : ''}
-          ${this.config.show_state === true
-            ? html`<div class="state">${entity.state}</div>`
-            : ''}
+          ${this.config.show_name !== false ? html`<div class="name">${name}</div>` : ''}
+          ${this.config.show_state === true ? html`<div class="state">${entity.state}</div>` : ''}
         </div>
       </ha-card>
     `;
@@ -195,14 +198,14 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
   private handlePointerDown(e: PointerEvent): void {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Store initial touch position for scroll detection
     this.startX = e.clientX;
     this.startY = e.clientY;
-    
+
     // Set pointer capture to ensure we get all pointer events
     (e.target as Element).setPointerCapture(e.pointerId);
-    
+
     this.startHold();
   }
 
@@ -215,7 +218,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     const deltaX = Math.abs(e.clientX - this.startX);
     const deltaY = Math.abs(e.clientY - this.startY);
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    
+
     // If user has moved more than the configured tolerance, consider it a scroll/drag and cancel hold
     const tolerance = this.config.movement_tolerance || DEFAULT_CONFIG.MOVEMENT_TOLERANCE;
     if (distance > tolerance) {
@@ -232,11 +235,11 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
         // Ignore errors if pointer capture is already released
       }
     }
-    
+
     // Reset position tracking
     this.startX = undefined;
     this.startY = undefined;
-    
+
     this.stopHold();
   }
 
@@ -251,13 +254,13 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     this.isAnimating = true;
 
     const duration = this.config.hold_duration || DEFAULT_CONFIG.HOLD_DURATION;
-    
+
     // Set CSS custom property for animation duration and listen for completion
     this.updateComplete.then(() => {
       const progressRing = this.shadowRoot?.querySelector('.progress-ring') as HTMLElement;
       if (progressRing) {
         progressRing.style.setProperty('--hold-duration', `${duration}ms`);
-        
+
         // Listen for animation completion
         const handleAnimationEnd = (event: AnimationEvent) => {
           if (event.animationName === 'fillProgress' && this.isHolding) {
@@ -266,7 +269,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
           }
           progressRing.removeEventListener('animationend', handleAnimationEnd);
         };
-        
+
         progressRing.addEventListener('animationend', handleAnimationEnd);
       }
     });
@@ -303,28 +306,28 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
       console.error(`Press and Hold Button Card: Entity not found: ${this.config.entity}`);
       return;
     }
-    
+
     console.log(`Press and Hold Button Card: Executing action for ${this.config.entity}`);
-    
+
     const actionType = this.config.hold_action || 'default';
-    
+
     switch (actionType) {
       case 'default':
         this.executeDefaultAction(entity);
         break;
-        
+
       case 'toggle':
         this.executeToggleAction(entity);
         break;
-        
+
       case 'more-info':
         this.executeMoreInfoAction();
         break;
-        
+
       case 'call-service':
         this.executeCustomServiceAction();
         break;
-        
+
       default:
         console.error(`Press and Hold Button Card: Unknown action: ${actionType}`);
         return;
@@ -333,41 +336,56 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
 
   private executeDefaultAction(entity: any): void {
     const domain = entity.entity_id.split('.')[0];
-    
+
     switch (domain) {
       case 'button':
         // Button entities should be pressed, not toggled
         console.log('Default action for button: press');
-        handleAction(this, this.hass, {
-          entity: this.config.entity,
-          hold_action: {
-            action: 'call-service',
-            service: 'button.press',
-            target: { entity_id: this.config.entity }
-          }
-        }, 'hold');
+        handleAction(
+          this,
+          this.hass,
+          {
+            entity: this.config.entity,
+            hold_action: {
+              action: 'call-service',
+              service: 'button.press',
+              target: { entity_id: this.config.entity },
+            },
+          },
+          'hold',
+        );
         break;
-        
+
       case 'light':
       case 'switch':
       case 'input_boolean':
         // These entities support toggle
         console.log('Default action for toggleable entity: toggle');
-        handleAction(this, this.hass, {
-          entity: this.config.entity,
-          hold_action: { action: 'toggle' }
-        }, 'hold');
+        handleAction(
+          this,
+          this.hass,
+          {
+            entity: this.config.entity,
+            hold_action: { action: 'toggle' },
+          },
+          'hold',
+        );
         break;
-        
+
       case 'cover':
         // Covers can be toggled (open/close)
         console.log('Default action for cover: toggle');
-        handleAction(this, this.hass, {
-          entity: this.config.entity,
-          hold_action: { action: 'toggle' }
-        }, 'hold');
+        handleAction(
+          this,
+          this.hass,
+          {
+            entity: this.config.entity,
+            hold_action: { action: 'toggle' },
+          },
+          'hold',
+        );
         break;
-        
+
       default:
         // For other entities, show more info
         console.log('Default action for other entity: more-info');
@@ -378,16 +396,23 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
 
   private executeToggleAction(entity: any): void {
     const domain = entity.entity_id.split('.')[0];
-    
+
     // Check if entity supports toggle
     if (['light', 'switch', 'input_boolean', 'cover', 'fan', 'media_player'].includes(domain)) {
       console.log('Toggle action for compatible entity');
-      handleAction(this, this.hass, {
-        entity: this.config.entity,
-        hold_action: { action: 'toggle' }
-      }, 'hold');
+      handleAction(
+        this,
+        this.hass,
+        {
+          entity: this.config.entity,
+          hold_action: { action: 'toggle' },
+        },
+        'hold',
+      );
     } else {
-      console.warn(`Entity ${this.config.entity} does not support toggle action. Domain: ${domain}`);
+      console.warn(
+        `Entity ${this.config.entity} does not support toggle action. Domain: ${domain}`,
+      );
       // Fallback to more-info for incompatible entities
       this.executeMoreInfoAction();
     }
@@ -395,10 +420,15 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
 
   private executeMoreInfoAction(): void {
     console.log('More info action');
-    handleAction(this, this.hass, {
-      entity: this.config.entity,
-      hold_action: { action: 'more-info' }
-    }, 'hold');
+    handleAction(
+      this,
+      this.hass,
+      {
+        entity: this.config.entity,
+        hold_action: { action: 'more-info' },
+      },
+      'hold',
+    );
   }
 
   private executeCustomServiceAction(): void {
@@ -417,16 +447,21 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
     console.log(`Custom service action: ${this.config.service}`);
 
     const serviceData = this.config.service_data || {};
-    
-    handleAction(this, this.hass, {
-      entity: this.config.entity,
-      hold_action: {
-        action: 'call-service',
-        service: this.config.service,
-        service_data: serviceData,
-        target: { entity_id: this.config.entity }
-      }
-    }, 'hold');
+
+    handleAction(
+      this,
+      this.hass,
+      {
+        entity: this.config.entity,
+        hold_action: {
+          action: 'call-service',
+          service: this.config.service,
+          service_data: serviceData,
+          target: { entity_id: this.config.entity },
+        },
+      },
+      'hold',
+    );
   }
 
   static get styles(): CSSResultGroup {
@@ -560,7 +595,7 @@ export class PressAndHoldButtonCard extends LitElement implements LovelaceCard {
 
   protected updated(changedProps: PropertyValues): void {
     super.updated(changedProps);
-    
+
     if (changedProps.has('config')) {
       this.stopHold();
     }

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 // Characterization tests: what the round press-and-hold button card does today
 // (v1.1.3), pinned before the hold logic is shared with the new tile feature.
@@ -16,14 +16,19 @@ const config = {
 };
 
 const states = {
-  'switch.spark': { entity_id: 'switch.spark', state: 'on', attributes: { friendly_name: 'Spark' } },
+  'switch.spark': {
+    entity_id: 'switch.spark',
+    state: 'on',
+    attributes: { friendly_name: 'Spark' },
+  },
 };
 
 async function mountButton(page: Page): Promise<void> {
   await page.goto('/e2e/fixture.html');
   await page.waitForFunction(() => (window as any).fixtureReady === true);
   await page.evaluate(
-    ({ config, states }) => (window as any).mount({ tag: 'press-and-hold-button-card', config, states }),
+    ({ config, states }) =>
+      (window as any).mount({ tag: 'press-and-hold-button-card', config, states }),
     { config, states },
   );
 }
