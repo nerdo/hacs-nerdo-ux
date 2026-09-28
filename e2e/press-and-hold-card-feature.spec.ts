@@ -136,3 +136,12 @@ test('shows its off label while its entity is off', async ({ page }) => {
   await page.evaluate(() => (window as any).setState('switch.arty1_outlet', 'off'));
   await expect(control(page)).toHaveText('Turn on all');
 });
+
+test('registers itself so the tile editor can offer it', async ({ page }) => {
+  await page.goto('/e2e/fixture.html');
+  await page.waitForFunction(() => (window as any).fixtureReady === true);
+  const types = await page.evaluate(() =>
+    ((window as any).customCardFeatures ?? []).map((feature: { type: string }) => feature.type),
+  );
+  expect(types).toContain('press-and-hold-card-feature');
+});

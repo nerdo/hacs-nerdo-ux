@@ -187,3 +187,16 @@ export class PressAndHoldCardFeature extends LitElement {
     }
   `;
 }
+
+declare global {
+  interface Window {
+    customCardFeatures?: Array<{ type: string; name: string; configurable?: boolean }>;
+  }
+}
+
+window.customCardFeatures = window.customCardFeatures || [];
+window.customCardFeatures.push({
+  type: 'press-and-hold-card-feature',
+  name: 'Press and hold',
+  configurable: true,
+});
