@@ -335,7 +335,7 @@ const ringState = (page: Page) =>
   });
 
 test('with cancel_animation: fade, a released hold fades its ring in place', async ({ page }) => {
-  await mountFeature(page, { cancel_animation: 'fade', cancel_duration: CANCEL_MS });
+  await mountFeature(page, { cancel_animation: 'fade', fade_duration: CANCEL_MS });
   await releaseHalfway(page);
   await page.waitForTimeout(CANCEL_MS / 2);
   const ring = await ringState(page);
@@ -347,7 +347,7 @@ test('with cancel_animation: fade, a released hold fades its ring in place', asy
 test('with cancel_animation: recede, a released hold runs its ring back to empty', async ({
   page,
 }) => {
-  await mountFeature(page, { cancel_animation: 'recede', cancel_duration: CANCEL_MS });
+  await mountFeature(page, { cancel_animation: 'recede', recede_duration: CANCEL_MS });
   await releaseHalfway(page);
   await page.waitForTimeout(CANCEL_MS / 4);
   const early = await ringState(page);
@@ -358,7 +358,7 @@ test('with cancel_animation: recede, a released hold runs its ring back to empty
 });
 
 test('with cancel_animation: none, a released hold empties its ring at once', async ({ page }) => {
-  await mountFeature(page, { cancel_animation: 'none', cancel_duration: CANCEL_MS });
+  await mountFeature(page, { cancel_animation: 'none' });
   await releaseHalfway(page);
   await page.waitForTimeout(30);
   expect((await ringState(page)).offset).toBe(300);
@@ -374,14 +374,14 @@ test('by default, a released hold runs its ring back to empty', async ({ page })
 });
 
 test('once the cancel animation ends, the ring is empty', async ({ page }) => {
-  await mountFeature(page, { cancel_animation: 'fade', cancel_duration: CANCEL_MS });
+  await mountFeature(page, { cancel_animation: 'fade', fade_duration: CANCEL_MS });
   await releaseHalfway(page);
   await page.waitForTimeout(CANCEL_MS + 200);
   expect((await ringState(page)).offset).toBe(300);
 });
 
 test('with cancel_animation: shake, a released hold shakes the button', async ({ page }) => {
-  await mountFeature(page, { cancel_animation: 'shake', cancel_duration: CANCEL_MS });
+  await mountFeature(page, { cancel_animation: 'shake', shake_duration: CANCEL_MS });
   const rest = await control(page).boundingBox();
   if (!rest) throw new Error('The control has no bounding box');
   await releaseHalfway(page);
@@ -398,7 +398,7 @@ test("the bar's sweep also runs back to empty when a hold is released", async ({
   await mountFeature(page, {
     style: 'bar',
     cancel_animation: 'recede',
-    cancel_duration: CANCEL_MS,
+    recede_duration: CANCEL_MS,
   });
   const box = await control(page).boundingBox();
   if (!box) throw new Error('The control has no bounding box');
@@ -411,9 +411,56 @@ test("the bar's sweep also runs back to empty when a hold is released", async ({
   expect(width).toBeLessThan(box.width / 2);
 });
 
-test('cancel_duration sets how long the cancel animation takes', async ({ page }) => {
-  await mountFeature(page, { cancel_animation: 'recede', cancel_duration: 1200 });
+test('recede_duration sets how long the recede takes', async ({ page }) => {
+  await mountFeature(page, { cancel_animation: 'recede', recede_duration: 1200 });
   await releaseHalfway(page);
   await page.waitForTimeout(600);
   expect((await ringState(page)).offset).toBeLessThan(300);
+});
+
+test('by default, a released hold has receded within 180 ms', async ({ page }) => {
+  await mountFeature(page);
+  await releaseHalfway(page);
+  await page.waitForTimeout(180);
+  expect((await ringState(page)).offset).toBe(300);
+});
+
+test('with cancel_animation: recede-fade, the ring recedes and fades together', async ({
+  page,
+}) => {
+  await mountFeature(page, {
+    cancel_animation: 'recede-fade',
+    recede_duration: CANCEL_MS,
+    fade_duration: CANCEL_MS,
+  });
+  await releaseHalfway(page);
+  await page.waitForTimeout(CANCEL_MS / 4);
+  const early = await ringState(page);
+  await page.waitForTimeout(CANCEL_MS / 4);
+  const later = await ringState(page);
+  expect(later.offset).toBeGreaterThan(early.offset);
+  expect(later.opacity).toBeLessThan(early.opacity);
+});
+
+test('with cancel_animation: recede-shake, the ring recedes while the button shakes', async ({
+  page,
+}) => {
+  await mountFeature(page, {
+    cancel_animation: 'recede-shake',
+    recede_duration: CANCEL_MS,
+    shake_duration: CANCEL_MS,
+  });
+  const rest = await control(page).boundingBox();
+  if (!rest) throw new Error('The control has no bounding box');
+  await releaseHalfway(page);
+  const offsets: number[] = [];
+  const shifts: number[] = [];
+  for (let sample = 0; sample < 6; sample += 1) {
+    offsets.push((await ringState(page)).offset);
+    const box = await control(page).boundingBox();
+    if (box) shifts.push(Math.abs(box.x - rest.x));
+    await page.waitForTimeout(CANCEL_MS / 10);
+  }
+  expect(offsets[offsets.length - 1]).toBeGreaterThan(offsets[0]);
+  expect(Math.max(...shifts)).toBeGreaterThanOrEqual(1);
 });

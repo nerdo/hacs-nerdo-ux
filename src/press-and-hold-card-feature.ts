@@ -8,9 +8,11 @@ const DEFAULT_TOLERANCE_PX = 20;
 // Home Assistant's tile feature height, and the round button's default size.
 const DEFAULT_BUTTON_PX = 42;
 const RING_GAP_PX = 2;
-const DEFAULT_CANCEL_MS = 250;
+// How long each part of a released hold's animation takes, by default.
+const DEFAULT_PART_MS = { recede: 150, fade: 250, shake: 300 } as const;
+type CancelPart = keyof typeof DEFAULT_PART_MS;
 
-type CancelAnimation = 'recede' | 'fade' | 'shake' | 'none';
+type CancelAnimation = 'recede' | 'fade' | 'shake' | 'recede-fade' | 'recede-shake' | 'none';
 
 // A hold-to-act control that renders inside a Home Assistant tile, as a custom
 // card feature. It acts on its own `entity`, which need not be the tile's.
@@ -36,11 +38,16 @@ interface FeatureConfig {
   /**
    * What the progress does when a hold is released before it completes:
    * `recede` (default) runs it back to empty, `fade` fades it where it stopped,
-   * `shake` clears it and shakes the button, `none` clears it at once.
+   * `shake` clears it and shakes the button, `recede-fade` and `recede-shake`
+   * do both parts at once, `none` clears it at once.
    */
   cancel_animation?: CancelAnimation;
-  /** Length of the cancel animation, in milliseconds. Defaults to 250. */
-  cancel_duration?: number;
+  /** Length of the recede part, in milliseconds. Defaults to 150. */
+  recede_duration?: number;
+  /** Length of the fade part, in milliseconds. Defaults to 250. */
+  fade_duration?: number;
+  /** Length of the shake part, in milliseconds. Defaults to 300. */
+  shake_duration?: number;
   label_on?: string;
   label_off?: string;
   service?: string;
@@ -61,17 +68,27 @@ export class PressAndHoldCardFeature extends LitElement {
   });
 
   /** A released hold's animation in progress: which one, and how far the hold got. */
-  @state() private cancelling?: { animation: CancelAnimation; progress: number };
+  @state() private cancelling?: { parts: CancelPart[]; progress: number };
   private cancelTimer?: ReturnType<typeof setTimeout>;
+
+  private partMs(part: CancelPart): number {
+    return this.config?.[`${part}_duration`] ?? DEFAULT_PART_MS[part];
+  }
 
   private startCancel(progress: number): void {
     const animation = this.config?.cancel_animation ?? 'recede';
     if (animation === 'none') return;
+    // A combination such as recede-fade runs its parts at the same time, each
+    // for its own duration.
+    const parts = animation.split('-') as CancelPart[];
     clearTimeout(this.cancelTimer);
-    this.cancelling = { animation, progress };
-    this.cancelTimer = setTimeout(() => {
-      this.cancelling = undefined;
-    }, this.config?.cancel_duration ?? DEFAULT_CANCEL_MS);
+    this.cancelling = { parts, progress };
+    this.cancelTimer = setTimeout(
+      () => {
+        this.cancelling = undefined;
+      },
+      Math.max(...parts.map((part) => this.partMs(part))),
+    );
   }
 
   public setConfig(config: FeatureConfig): void {
@@ -144,13 +161,17 @@ export class PressAndHoldCardFeature extends LitElement {
         : '';
     return html`<div class="feature ${style}"><div
       class="control ${style} ${isOn ? 'on' : 'off'} ${busy ? 'busy' : ''} ${this.hold.holding ? 'holding' : ''} ${
-        this.cancelling ? `cancelling cancel-${this.cancelling.animation}` : ''
+        this.cancelling
+          ? `cancelling ${this.cancelling.parts.map((part) => `cancel-${part}`).join(' ')}`
+          : ''
       }"
       aria-busy=${busy ? 'true' : 'false'}
       aria-disabled=${busy ? 'true' : 'false'}
       style="--control-color: ${cssColor(config?.color)}; --hold-duration: ${holdMs}ms${
         style === 'ring' ? `; --button-size: ${buttonPx}px` : ''
-      }; --cancel-duration: ${config?.cancel_duration ?? DEFAULT_CANCEL_MS}ms; --cancel-progress: ${
+      }; --recede-duration: ${this.partMs('recede')}ms; --fade-duration: ${this.partMs(
+        'fade',
+      )}ms; --shake-duration: ${this.partMs('shake')}ms; --cancel-progress: ${
         this.cancelling?.progress ?? 0
       }${config?.progress_color_on ? `; --progress-on: ${cssColor(config.progress_color_on)}` : ''}${
         config?.progress_color_off ? `; --progress-off: ${cssColor(config.progress_color_off)}` : ''
@@ -242,16 +263,22 @@ export class PressAndHoldCardFeature extends LitElement {
     }
     .control.cancel-fade .progress-bar {
       stroke-dashoffset: calc(300px * (1 - var(--cancel-progress)));
-      animation: cancel-fade var(--cancel-duration) ease-out forwards;
+      animation: cancel-fade var(--fade-duration) ease-out forwards;
     }
     .control.cancel-fade .progress-track {
-      animation: cancel-fade var(--cancel-duration) ease-out forwards;
+      animation: cancel-fade var(--fade-duration) ease-out forwards;
     }
     .control.cancel-recede .progress-bar {
-      animation: cancel-recede-ring var(--cancel-duration) ease-in forwards;
+      animation: cancel-recede-ring var(--recede-duration) ease-in forwards;
+    }
+    /* Both parts on the same element need one combined animation list. */
+    .control.cancel-recede.cancel-fade .progress-bar {
+      animation:
+        cancel-recede-ring var(--recede-duration) ease-in forwards,
+        cancel-fade var(--fade-duration) ease-out forwards;
     }
     .control.cancel-shake {
-      animation: cancel-shake var(--cancel-duration) ease-in-out;
+      animation: cancel-shake var(--shake-duration) ease-in-out;
     }
     @keyframes cancel-fade {
       to {
@@ -343,10 +370,15 @@ export class PressAndHoldCardFeature extends LitElement {
     }
     .control.bar.cancel-fade::after {
       width: calc(var(--cancel-progress) * 100%);
-      animation: cancel-fade var(--cancel-duration) ease-out forwards;
+      animation: cancel-fade var(--fade-duration) ease-out forwards;
     }
     .control.bar.cancel-recede::after {
-      animation: cancel-recede-bar var(--cancel-duration) ease-in forwards;
+      animation: cancel-recede-bar var(--recede-duration) ease-in forwards;
+    }
+    .control.bar.cancel-recede.cancel-fade::after {
+      animation:
+        cancel-recede-bar var(--recede-duration) ease-in forwards,
+        cancel-fade var(--fade-duration) ease-out forwards;
     }
     @keyframes cancel-recede-bar {
       from {
