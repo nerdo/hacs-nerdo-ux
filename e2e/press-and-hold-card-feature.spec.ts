@@ -315,3 +315,105 @@ test('the ring is centered on the button', async ({ page }) => {
   );
   expect(Math.abs(offset.y), `ring center is ${offset.y}px below the button's`).toBeLessThan(0.5);
 });
+
+// Releasing a hold partway: what the progress does afterwards.
+const CANCEL_MS = 400;
+
+async function releaseHalfway(page: Page): Promise<void> {
+  const box = await control(page).boundingBox();
+  if (!box) throw new Error('The control has no bounding box');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(HOLD_MS / 2);
+  await page.mouse.up();
+}
+
+const ringState = (page: Page) =>
+  page.locator('press-and-hold-card-feature .progress-bar').evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { offset: Number.parseFloat(style.strokeDashoffset), opacity: Number(style.opacity) };
+  });
+
+test('with cancel_animation: fade, a released hold fades its ring in place', async ({ page }) => {
+  await mountFeature(page, { cancel_animation: 'fade', cancel_duration: CANCEL_MS });
+  await releaseHalfway(page);
+  await page.waitForTimeout(CANCEL_MS / 2);
+  const ring = await ringState(page);
+  expect(ring.offset).toBeLessThan(250);
+  expect(ring.opacity).toBeGreaterThan(0.05);
+  expect(ring.opacity).toBeLessThan(0.95);
+});
+
+test('with cancel_animation: recede, a released hold runs its ring back to empty', async ({
+  page,
+}) => {
+  await mountFeature(page, { cancel_animation: 'recede', cancel_duration: CANCEL_MS });
+  await releaseHalfway(page);
+  await page.waitForTimeout(CANCEL_MS / 4);
+  const early = await ringState(page);
+  await page.waitForTimeout(CANCEL_MS / 4);
+  const later = await ringState(page);
+  expect(early.offset).toBeLessThan(300);
+  expect(later.offset).toBeGreaterThan(early.offset);
+});
+
+test('with cancel_animation: none, a released hold empties its ring at once', async ({ page }) => {
+  await mountFeature(page, { cancel_animation: 'none', cancel_duration: CANCEL_MS });
+  await releaseHalfway(page);
+  await page.waitForTimeout(30);
+  expect((await ringState(page)).offset).toBe(300);
+});
+
+test('by default, a released hold runs its ring back to empty', async ({ page }) => {
+  await mountFeature(page);
+  await releaseHalfway(page);
+  await page.waitForTimeout(60);
+  const ring = await ringState(page);
+  expect(ring.offset).toBeGreaterThan(0);
+  expect(ring.offset).toBeLessThan(300);
+});
+
+test('once the cancel animation ends, the ring is empty', async ({ page }) => {
+  await mountFeature(page, { cancel_animation: 'fade', cancel_duration: CANCEL_MS });
+  await releaseHalfway(page);
+  await page.waitForTimeout(CANCEL_MS + 200);
+  expect((await ringState(page)).offset).toBe(300);
+});
+
+test('with cancel_animation: shake, a released hold shakes the button', async ({ page }) => {
+  await mountFeature(page, { cancel_animation: 'shake', cancel_duration: CANCEL_MS });
+  const rest = await control(page).boundingBox();
+  if (!rest) throw new Error('The control has no bounding box');
+  await releaseHalfway(page);
+  const shifts: number[] = [];
+  for (let sample = 0; sample < 8; sample += 1) {
+    const box = await control(page).boundingBox();
+    if (box) shifts.push(Math.abs(box.x - rest.x));
+    await page.waitForTimeout(CANCEL_MS / 10);
+  }
+  expect(Math.max(...shifts)).toBeGreaterThanOrEqual(1);
+});
+
+test("the bar's sweep also runs back to empty when a hold is released", async ({ page }) => {
+  await mountFeature(page, {
+    style: 'bar',
+    cancel_animation: 'recede',
+    cancel_duration: CANCEL_MS,
+  });
+  const box = await control(page).boundingBox();
+  if (!box) throw new Error('The control has no bounding box');
+  await releaseHalfway(page);
+  await page.waitForTimeout(CANCEL_MS / 4);
+  const width = await control(page).evaluate((el) =>
+    Number.parseFloat(getComputedStyle(el, '::after').width),
+  );
+  expect(width).toBeGreaterThan(0);
+  expect(width).toBeLessThan(box.width / 2);
+});
+
+test('cancel_duration sets how long the cancel animation takes', async ({ page }) => {
+  await mountFeature(page, { cancel_animation: 'recede', cancel_duration: 1200 });
+  await releaseHalfway(page);
+  await page.waitForTimeout(600);
+  expect((await ringState(page)).offset).toBeLessThan(300);
+});

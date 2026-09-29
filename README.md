@@ -162,6 +162,8 @@ features:
 | `style` | string | `ring` | `ring`: a round button with a progress ring that fills during the hold, like the press-and-hold button card, with the label beside it. `bar`: a full-width bar with a fill that sweeps across, label inside |
 | `button_size` | number | feature height (42) | Diameter of the round button in pixels. The icon scales with it |
 | `progress_width` | number | 12% of `button_size` | Thickness of the round button's progress ring in pixels. The ring always sits just outside the button |
+| `cancel_animation` | string | `recede` | What the progress does when a hold is released before it completes. `recede`: runs back to empty, quickly and smoothly. `fade`: fades out where it stopped. `shake`: clears and gives the button a short shake. `none`: clears at once |
+| `cancel_duration` | number | `250` | Length of the cancel animation in milliseconds |
 | `progress_color_on` | string | theme success color (green) | Progress color for a hold that turns the entity on: the ring, or the bar's sweep. A color name or any CSS color |
 | `progress_color_off` | string | theme warning color (orange) | Progress color for a hold that turns the entity off |
 | `hold_duration` | number | `1000` | Hold duration in milliseconds |

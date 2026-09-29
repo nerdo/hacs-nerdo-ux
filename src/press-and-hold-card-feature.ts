@@ -1,5 +1,5 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { cssColor } from './css-color';
 import { HoldController } from './hold-controller';
 
@@ -8,6 +8,9 @@ const DEFAULT_TOLERANCE_PX = 20;
 // Home Assistant's tile feature height, and the round button's default size.
 const DEFAULT_BUTTON_PX = 42;
 const RING_GAP_PX = 2;
+const DEFAULT_CANCEL_MS = 250;
+
+type CancelAnimation = 'recede' | 'fade' | 'shake' | 'none';
 
 // A hold-to-act control that renders inside a Home Assistant tile, as a custom
 // card feature. It acts on its own `entity`, which need not be the tile's.
@@ -30,6 +33,14 @@ interface FeatureConfig {
   progress_color_off?: string;
   /** Thickness of the round button's progress ring, in pixels. Defaults to 12% of the button size. */
   progress_width?: number;
+  /**
+   * What the progress does when a hold is released before it completes:
+   * `recede` (default) runs it back to empty, `fade` fades it where it stopped,
+   * `shake` clears it and shakes the button, `none` clears it at once.
+   */
+  cancel_animation?: CancelAnimation;
+  /** Length of the cancel animation, in milliseconds. Defaults to 250. */
+  cancel_duration?: number;
   label_on?: string;
   label_off?: string;
   service?: string;
@@ -46,7 +57,22 @@ export class PressAndHoldCardFeature extends LitElement {
     duration: () => this.config?.hold_duration ?? DEFAULT_HOLD_MS,
     tolerance: () => this.config?.movement_tolerance ?? DEFAULT_TOLERANCE_PX,
     onComplete: () => this.busyGate(),
+    onCancel: (progress) => this.startCancel(progress),
   });
+
+  /** A released hold's animation in progress: which one, and how far the hold got. */
+  @state() private cancelling?: { animation: CancelAnimation; progress: number };
+  private cancelTimer?: ReturnType<typeof setTimeout>;
+
+  private startCancel(progress: number): void {
+    const animation = this.config?.cancel_animation ?? 'recede';
+    if (animation === 'none') return;
+    clearTimeout(this.cancelTimer);
+    this.cancelling = { animation, progress };
+    this.cancelTimer = setTimeout(() => {
+      this.cancelling = undefined;
+    }, this.config?.cancel_duration ?? DEFAULT_CANCEL_MS);
+  }
 
   public setConfig(config: FeatureConfig): void {
     this.config = config;
@@ -117,11 +143,15 @@ export class PressAndHoldCardFeature extends LitElement {
           </svg>`
         : '';
     return html`<div class="feature ${style}"><div
-      class="control ${style} ${isOn ? 'on' : 'off'} ${busy ? 'busy' : ''} ${this.hold.holding ? 'holding' : ''}"
+      class="control ${style} ${isOn ? 'on' : 'off'} ${busy ? 'busy' : ''} ${this.hold.holding ? 'holding' : ''} ${
+        this.cancelling ? `cancelling cancel-${this.cancelling.animation}` : ''
+      }"
       aria-busy=${busy ? 'true' : 'false'}
       aria-disabled=${busy ? 'true' : 'false'}
       style="--control-color: ${cssColor(config?.color)}; --hold-duration: ${holdMs}ms${
         style === 'ring' ? `; --button-size: ${buttonPx}px` : ''
+      }; --cancel-duration: ${config?.cancel_duration ?? DEFAULT_CANCEL_MS}ms; --cancel-progress: ${
+        this.cancelling?.progress ?? 0
       }${config?.progress_color_on ? `; --progress-on: ${cssColor(config.progress_color_on)}` : ''}${
         config?.progress_color_off ? `; --progress-off: ${cssColor(config.progress_color_off)}` : ''
       }"
@@ -205,6 +235,47 @@ export class PressAndHoldCardFeature extends LitElement {
     .control.holding .progress-bar {
       animation: fill-ring var(--hold-duration) linear forwards;
     }
+    /* A released hold: the progress starts from where the hold stopped. */
+    .control.cancel-fade .progress-track,
+    .control.cancel-recede .progress-track {
+      opacity: 0.2;
+    }
+    .control.cancel-fade .progress-bar {
+      stroke-dashoffset: calc(300px * (1 - var(--cancel-progress)));
+      animation: cancel-fade var(--cancel-duration) ease-out forwards;
+    }
+    .control.cancel-fade .progress-track {
+      animation: cancel-fade var(--cancel-duration) ease-out forwards;
+    }
+    .control.cancel-recede .progress-bar {
+      animation: cancel-recede-ring var(--cancel-duration) ease-in forwards;
+    }
+    .control.cancel-shake {
+      animation: cancel-shake var(--cancel-duration) ease-in-out;
+    }
+    @keyframes cancel-fade {
+      to {
+        opacity: 0;
+      }
+    }
+    @keyframes cancel-recede-ring {
+      from {
+        stroke-dashoffset: calc(300px * (1 - var(--cancel-progress)));
+      }
+      to {
+        stroke-dashoffset: 300;
+      }
+    }
+    @keyframes cancel-shake {
+      15%,
+      55% {
+        translate: -4px 0;
+      }
+      35%,
+      75% {
+        translate: 4px 0;
+      }
+    }
     @keyframes fill-ring {
       to {
         stroke-dashoffset: 0;
@@ -269,6 +340,21 @@ export class PressAndHoldCardFeature extends LitElement {
     }
     .control.bar.holding::after {
       animation: hold-fill var(--hold-duration) linear forwards;
+    }
+    .control.bar.cancel-fade::after {
+      width: calc(var(--cancel-progress) * 100%);
+      animation: cancel-fade var(--cancel-duration) ease-out forwards;
+    }
+    .control.bar.cancel-recede::after {
+      animation: cancel-recede-bar var(--cancel-duration) ease-in forwards;
+    }
+    @keyframes cancel-recede-bar {
+      from {
+        width: calc(var(--cancel-progress) * 100%);
+      }
+      to {
+        width: 0;
+      }
     }
     @keyframes hold-fill {
       to {

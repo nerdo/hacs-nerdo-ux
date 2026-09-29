@@ -7,6 +7,8 @@ export interface HoldOptions {
   tolerance: () => number;
   /** Runs once when a hold completes. */
   onComplete: () => void;
+  /** Runs when a hold ends before completing, with how far it got (0 to 1). */
+  onCancel?: (progress: number) => void;
 }
 
 /**
@@ -20,6 +22,7 @@ export class HoldController implements ReactiveController {
   private timer?: ReturnType<typeof setTimeout>;
   private startX = 0;
   private startY = 0;
+  private startedAt = 0;
 
   constructor(
     private readonly host: ReactiveControllerHost,
@@ -33,10 +36,11 @@ export class HoldController implements ReactiveController {
     if (this.holding) return;
     this.startX = event.clientX;
     this.startY = event.clientY;
+    this.startedAt = performance.now();
     (event.target as Element).setPointerCapture?.(event.pointerId);
     this.setHolding(true);
     this.timer = setTimeout(() => {
-      this.stop();
+      this.stop(false);
       this.options.onComplete();
     }, this.options.duration());
   };
@@ -44,7 +48,7 @@ export class HoldController implements ReactiveController {
   public readonly pointerMove = (event: PointerEvent): void => {
     if (!this.holding) return;
     const distance = Math.hypot(event.clientX - this.startX, event.clientY - this.startY);
-    if (distance > this.options.tolerance()) this.stop();
+    if (distance > this.options.tolerance()) this.stop(true);
   };
 
   public readonly pointerUp = (event?: PointerEvent): void => {
@@ -55,24 +59,29 @@ export class HoldController implements ReactiveController {
         // The capture was already released.
       }
     }
-    this.stop();
+    this.stop(true);
   };
 
   /** Cancels a hold in progress without completing it. */
   public cancel(): void {
-    this.stop();
+    this.stop(true);
   }
 
   public hostDisconnected(): void {
-    this.stop();
+    this.stop(true);
   }
 
-  private stop(): void {
+  private stop(cancelled: boolean): void {
+    const wasHolding = this.holding;
     if (this.timer !== undefined) {
       clearTimeout(this.timer);
       this.timer = undefined;
     }
     this.setHolding(false);
+    if (cancelled && wasHolding) {
+      const progress = (performance.now() - this.startedAt) / this.options.duration();
+      this.options.onCancel?.(Math.min(Math.max(progress, 0), 1));
+    }
   }
 
   private setHolding(holding: boolean): void {
