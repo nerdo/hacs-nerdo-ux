@@ -300,3 +300,18 @@ test('the ring surrounds the button without covering it', async ({ page }) => {
   await mountFeature(page, { button_size: 84 });
   expect((await ringGeometry(page)).innerRadiusPx).toBeGreaterThan(42);
 });
+
+test('the ring is centered on the button', async ({ page }) => {
+  await mountFeature(page, { button_size: 84 });
+  const button = await control(page).boundingBox();
+  const ringBox = await page.locator('press-and-hold-card-feature .progress').boundingBox();
+  if (!button || !ringBox) throw new Error('The button or the ring has no bounding box');
+  const offset = {
+    x: ringBox.x + ringBox.width / 2 - (button.x + button.width / 2),
+    y: ringBox.y + ringBox.height / 2 - (button.y + button.height / 2),
+  };
+  expect(Math.abs(offset.x), `ring center is ${offset.x}px right of the button's`).toBeLessThan(
+    0.5,
+  );
+  expect(Math.abs(offset.y), `ring center is ${offset.y}px below the button's`).toBeLessThan(0.5);
+});

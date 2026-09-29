@@ -96,7 +96,9 @@ export class PressAndHoldCardFeature extends LitElement {
     const buttonPx = config?.button_size ?? DEFAULT_BUTTON_PX;
     const ringPx = config?.progress_width ?? Math.round(buttonPx * 0.12);
     // The ring sits outside the button: the SVG spans the button plus the gap
-    // and the ring's thickness on every side.
+    // and the ring's thickness on every side. An absolutely positioned child is
+    // placed from the inside of its parent's border, so the offset also steps
+    // back over the button's border.
     const ringOffsetPx = RING_GAP_PX + ringPx;
     const ringBoxPx = buttonPx + 2 * ringOffsetPx;
     const ringCenter = ringBoxPx / 2;
@@ -106,7 +108,7 @@ export class PressAndHoldCardFeature extends LitElement {
         ? html`<svg
             class="progress ${isOn ? 'turning-off' : 'turning-on'}"
             viewBox="0 0 ${ringBoxPx} ${ringBoxPx}"
-            style="top: -${ringOffsetPx}px; left: -${ringOffsetPx}px; width: ${ringBoxPx}px; height: ${ringBoxPx}px"
+            style="top: calc(-${ringOffsetPx}px - var(--control-border-width)); left: calc(-${ringOffsetPx}px - var(--control-border-width)); width: ${ringBoxPx}px; height: ${ringBoxPx}px"
           >
             <circle class="progress-track" cx=${ringCenter} cy=${ringCenter} r=${ringRadius}
               stroke-width=${ringPx} pathLength="300"></circle>
@@ -149,9 +151,10 @@ export class PressAndHoldCardFeature extends LitElement {
       box-sizing: border-box;
       height: var(--feature-height, 42px);
       border-radius: var(--feature-border-radius, 12px);
-      border: 2px solid var(--control-color);
+      border: var(--control-border-width) solid var(--control-color);
     }
 :host {
+      --control-border-width: 2px;
       --progress-on: var(--success-color, #4caf50);
       --progress-off: var(--warning-color, #ff9800);
     }
