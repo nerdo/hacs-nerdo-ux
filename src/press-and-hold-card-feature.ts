@@ -21,6 +21,12 @@ type CancelAnimation = 'recede' | 'fade' | 'shake' | 'recede-fade' | 'recede-sha
 interface FeatureConfig {
   type: string;
   entity: string;
+  /**
+   * What a completed hold does: `toggle` toggles `entity`, `call-service` calls
+   * `service`, `more-info` opens the entity's details. Defaults to
+   * `call-service` when a service is set, and `toggle` otherwise.
+   */
+  hold_action?: 'toggle' | 'call-service' | 'more-info';
   color?: string;
   busy_entity?: string;
   hold_duration?: number;
@@ -128,13 +134,26 @@ export class PressAndHoldCardFeature extends LitElement {
     return busyEntity !== undefined && this.hass?.states[busyEntity]?.state === 'on';
   }
 
-  // Sends the configured service with its service_data. Unlike the round
-  // button (custom-card-helpers' handleAction), it adds no target.
+  // Runs the hold action. A service call sends service_data as given: unlike
+  // the round button (custom-card-helpers' handleAction), it adds no target.
   private actionDispatch(): void {
     const config = this.config;
-    if (!config?.service || !this.hass) return;
-    const [domain, service] = config.service.split('.', 2);
-    this.hass.callService(domain, service, config.service_data ?? {});
+    if (!config || !this.hass) return;
+    const action = config.hold_action ?? (config.service ? 'call-service' : 'toggle');
+    if (action === 'more-info') {
+      this.dispatchEvent(
+        new CustomEvent('hass-more-info', {
+          detail: { entityId: config.entity },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    } else if (action === 'toggle') {
+      this.hass.callService('homeassistant', 'toggle', { entity_id: config.entity });
+    } else if (config.service) {
+      const [domain, service] = config.service.split('.', 2);
+      this.hass.callService(domain, service, config.service_data ?? {});
+    }
   }
 
   protected render(): TemplateResult {

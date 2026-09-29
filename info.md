@@ -20,6 +20,7 @@ The same hold-to-act control, inside a tile card.
 - Configurable button size, ring thickness, progress colors, icon, and labels.
 - A released hold recedes, fades, shakes, or a combination, each with its own duration.
 - Locks while a busy entity is on.
+- A hold toggles the entity, calls any service, or opens the entity's details.
 - Visual editor.
 
 ## Installation
@@ -45,10 +46,7 @@ entity: switch.example_switch
 features:
   - type: custom:press-and-hold-card-feature
     entity: switch.example_switch
-    icon: mdi:power
-    service: switch.toggle
-    service_data:
-      entity_id: switch.example_switch
+    icon: mdi:power  # a hold toggles the entity; set service to call something else
 ```
 
 Every option is in the [README](https://github.com/nerdo/hacs-nerdo-ux#readme).

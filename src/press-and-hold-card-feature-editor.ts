@@ -23,6 +23,14 @@ export const EDITOR_SCHEMA: Section[] = [
     expanded: true,
     schema: [
       { name: 'entity', selector: { entity: {} } },
+      {
+        name: 'hold_action',
+        selector: select([
+          ['toggle', 'Toggle the entity'],
+          ['call-service', 'Call an action'],
+          ['more-info', 'Show more info'],
+        ]),
+      },
       { name: 'service', selector: { text: {} } },
       { name: 'service_data', selector: { object: {} } },
     ],
@@ -91,6 +99,7 @@ export const EDITOR_SCHEMA: Section[] = [
 
 const LABELS: Record<string, string> = {
   entity: 'Entity',
+  hold_action: 'When the hold completes',
   service: 'Action to perform',
   service_data: 'Action data',
   style: 'Style',
@@ -113,8 +122,9 @@ const LABELS: Record<string, string> = {
 
 const HELPERS: Record<string, string> = {
   entity: 'Whose state the control shows: filled while on, hollow while off.',
+  hold_action: 'Defaults to calling the action when one is set, and toggling the entity otherwise.',
   service:
-    'Called when a hold completes, for example script.my_script. Without one, a hold does nothing.',
+    'Called when a hold completes with the "Call an action" choice, for example script.my_script.',
   service_data: 'Sent with the action. No target is added.',
   style: 'Round button (default) or full-width bar.',
   color: 'The fill and outline color.',

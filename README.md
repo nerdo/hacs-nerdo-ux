@@ -48,6 +48,7 @@ A hold-to-act control that sits inside a Home Assistant **tile card**, under the
 - **Busy lockout**: while a `busy_entity` is on, the control dims, pulses, and ignores holds.
 - **Optional icon and labels**: blank unless you set `icon`, `label_on` or `label_off`.
 - **Its own entity**: the control acts on `entity`, which need not be the tile's entity.
+- **Choose the action**: a completed hold toggles the entity, calls any service, or opens the entity's details.
 - **Visual editor**: add it from the tile card's editor (**Add feature** → **Press and hold**). Every option is in the editor, grouped into sections, and a new control starts on the tile's own entity.
 
 ## Installation
@@ -171,7 +172,7 @@ features:
     cancel_animation: recede-shake
 ```
 
-A completed hold calls `service`. Without a `service`, a hold does nothing.
+What a completed hold does is `hold_action`. It calls `service` when one is set, and toggles `entity` otherwise, so the smallest config is a `type` and an `entity`.
 
 #### Configuration Options
 
@@ -182,7 +183,8 @@ The options are grouped as the visual editor groups them. Colors take a Home Ass
 | `type` | string | **Required** | `custom:press-and-hold-card-feature` |
 | **Entity and action** | | | |
 | `entity` | string | **Required** | The entity whose state the control shows: filled when `on`, hollow otherwise |
-| `service` | string | - | Service to call when a hold completes (e.g. `script.my_script` or `switch.toggle`). Without it, a hold does nothing |
+| `hold_action` | string | `call-service` when `service` is set, else `toggle` | What a completed hold does. `toggle`: toggles `entity`. `call-service`: calls `service`. `more-info`: opens the entity's details |
+| `service` | string | - | Service to call when `hold_action` is `call-service` (e.g. `script.my_script`) |
 | `service_data` | object | `{}` | Data for the service. No `target` is added |
 | **Appearance** | | | |
 | `style` | string | `ring` | `ring`: a round button with a progress ring that fills during the hold, with the label beside it. `bar`: a full-width bar with a fill that sweeps across, label inside |

@@ -6,6 +6,7 @@ import { expect, type Page, test } from '@playwright/test';
 
 const ALL_OPTIONS = [
   'entity',
+  'hold_action',
   'service',
   'service_data',
   'style',

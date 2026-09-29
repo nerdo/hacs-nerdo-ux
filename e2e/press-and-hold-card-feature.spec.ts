@@ -85,6 +85,56 @@ test("In a browser, a yellow hold control inside arty1's power tile calls its po
   ]);
 });
 
+test('with no service, a completed hold toggles its entity', async ({ page }) => {
+  await mountFeature(page, { service: undefined, service_data: undefined });
+  await hold(page, HOLD_MS * 2);
+  expect(await calls(page)).toEqual([
+    {
+      domain: 'homeassistant',
+      service: 'toggle',
+      data: { entity_id: 'switch.arty1_outlet' },
+      target: {},
+    },
+  ]);
+});
+
+test('with hold_action: toggle, a completed hold toggles its entity even when a service is set', async ({
+  page,
+}) => {
+  await mountFeature(page, { hold_action: 'toggle' });
+  await hold(page, HOLD_MS * 2);
+  expect(await calls(page)).toEqual([
+    {
+      domain: 'homeassistant',
+      service: 'toggle',
+      data: { entity_id: 'switch.arty1_outlet' },
+      target: {},
+    },
+  ]);
+});
+
+test("with hold_action: more-info, a completed hold opens its entity's details and calls nothing", async ({
+  page,
+}) => {
+  await mountFeature(page, { hold_action: 'more-info' });
+  await page.evaluate(() => {
+    (window as any).moreInfo = [];
+    document.addEventListener('hass-more-info', (event) =>
+      (window as any).moreInfo.push((event as CustomEvent).detail),
+    );
+  });
+  await hold(page, HOLD_MS * 2);
+  expect(await page.evaluate(() => (window as any).moreInfo)).toEqual([
+    { entityId: 'switch.arty1_outlet' },
+  ]);
+});
+
+test('with hold_action: more-info, a completed hold calls no service', async ({ page }) => {
+  await mountFeature(page, { hold_action: 'more-info' });
+  await hold(page, HOLD_MS * 2);
+  expect(await calls(page)).toEqual([]);
+});
+
 test('releasing the control before its hold duration calls nothing', async ({ page }) => {
   await mountFeature(page);
   await hold(page, HOLD_MS * 0.4);
