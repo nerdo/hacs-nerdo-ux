@@ -2,6 +2,7 @@ import { css, html, LitElement, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { cssColor } from './css-color';
 import { HoldController } from './hold-controller';
+import './press-and-hold-card-feature-editor';
 
 const DEFAULT_HOLD_MS = 1000;
 const DEFAULT_TOLERANCE_PX = 20;
@@ -89,6 +90,18 @@ export class PressAndHoldCardFeature extends LitElement {
       },
       Math.max(...parts.map((part) => this.partMs(part))),
     );
+  }
+
+  public static getConfigElement(): HTMLElement {
+    return document.createElement('press-and-hold-card-feature-editor');
+  }
+
+  // A new control starts on the tile's own entity.
+  public static getStubConfig(
+    _hass: unknown,
+    context?: { entity_id?: string },
+  ): Record<string, unknown> {
+    return { type: 'custom:press-and-hold-card-feature', entity: context?.entity_id };
   }
 
   public setConfig(config: FeatureConfig): void {

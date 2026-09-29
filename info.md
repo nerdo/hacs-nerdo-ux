@@ -1,36 +1,54 @@
 A collection of custom Home Assistant Lovelace cards focused on enhancing user experience and preventing accidental actions.
 
-## Cards Included
+## Included
 
 ### Press and Hold Button Card
 
-A customizable Lovelace card that provides press-and-hold functionality for switching entities. Perfect for preventing accidental toggles of important switches by requiring a deliberate hold action with visual feedback.
+A card that acts only after a deliberate press and hold, with a progress ring that fills during the hold: green when turning on, orange when turning off.
 
-## Features
+- Hold duration is configurable (default 1 second, 500 ms to 10 s).
+- Smart default action by entity type, or toggle, more info, or any service call.
+- Show or hide the name, state, and icon, with a configurable icon size.
+- Visual editor.
 
-- **Press and Hold**: Requires holding the button for a configurable duration before toggling
-- **Visual Feedback**: Animated progress ring shows countdown progress with color coding
-- **Configurable Duration**: Set custom hold duration (default 3 seconds, range 500ms-10s)
-- **Customizable Display**: Show/hide name, state, and icon with configurable icon sizes
-- **Color Coded Progress**: Green ring for turning ON, orange ring for turning OFF
-- **Entity Support**: Works with any Home Assistant switch, light, or other toggleable entity
-- **Responsive Design**: Clean, modern interface that adapts to your theme
+### Press and Hold Tile Feature
+
+The same hold-to-act control, inside a tile card.
+
+- A round button with a progress ring (default), or a full-width bar.
+- Filled in its color while its entity is on, hollow while off.
+- Configurable button size, ring thickness, progress colors, icon, and labels.
+- A released hold recedes, fades, shakes, or a combination, each with its own duration.
+- Locks while a busy entity is on.
+- Visual editor.
 
 ## Installation
 
-Install via HACS by searching for "Nerdo UX" or manually by placing the `hacs-nerdo-ux.js` file in your `www` folder.
+Install via HACS by searching for "Nerdo UX", or manually by placing `hacs-nerdo-ux.js` in your `www` folder.
 
 ## Configuration
-
-### Press and Hold Button Card
 
 ```yaml
 type: custom:press-and-hold-button-card
 entity: switch.example_switch
 name: "Press & Hold Switch"
-hold_duration: 3000  # milliseconds (optional, defaults to 3000)
+hold_duration: 1000  # milliseconds (optional, defaults to 1000)
 show_name: true      # optional, defaults to true
-show_state: true     # optional, defaults to true
+show_state: false    # optional, defaults to false
 show_icon: true      # optional, defaults to true
 icon_height: 80      # optional, defaults to 80px
 ```
+
+```yaml
+type: tile
+entity: switch.example_switch
+features:
+  - type: custom:press-and-hold-card-feature
+    entity: switch.example_switch
+    icon: mdi:power
+    service: switch.toggle
+    service_data:
+      entity_id: switch.example_switch
+```
+
+Every option is in the [README](https://github.com/nerdo/hacs-nerdo-ux#readme).
