@@ -5,6 +5,9 @@ import { HoldController } from './hold-controller';
 
 const DEFAULT_HOLD_MS = 1000;
 const DEFAULT_TOLERANCE_PX = 20;
+// Home Assistant's tile feature height, and the round button's default size.
+const DEFAULT_BUTTON_PX = 42;
+const RING_GAP_PX = 2;
 
 // A hold-to-act control that renders inside a Home Assistant tile, as a custom
 // card feature. It acts on its own `entity`, which need not be the tile's.
@@ -25,6 +28,8 @@ interface FeatureConfig {
   progress_color_on?: string;
   /** Progress color for a hold that turns the entity off. Defaults to the theme's warning color. */
   progress_color_off?: string;
+  /** Thickness of the round button's progress ring, in pixels. Defaults to 12% of the button size. */
+  progress_width?: number;
   label_on?: string;
   label_off?: string;
   service?: string;
@@ -88,11 +93,25 @@ export class PressAndHoldCardFeature extends LitElement {
       ? html`<ha-icon class="icon" .icon=${config.icon}></ha-icon>`
       : '';
     const labelTemplate = label ? html`<span class="label">${label}</span>` : '';
+    const buttonPx = config?.button_size ?? DEFAULT_BUTTON_PX;
+    const ringPx = config?.progress_width ?? Math.round(buttonPx * 0.12);
+    // The ring sits outside the button: the SVG spans the button plus the gap
+    // and the ring's thickness on every side.
+    const ringOffsetPx = RING_GAP_PX + ringPx;
+    const ringBoxPx = buttonPx + 2 * ringOffsetPx;
+    const ringCenter = ringBoxPx / 2;
+    const ringRadius = ringCenter - ringPx / 2;
     const ring =
       style === 'ring'
-        ? html`<svg class="progress ${isOn ? 'turning-off' : 'turning-on'}" viewBox="0 0 100 100">
-            <circle class="progress-track" cx="50" cy="50" r="45"></circle>
-            <circle class="progress-bar" cx="50" cy="50" r="45"></circle>
+        ? html`<svg
+            class="progress ${isOn ? 'turning-off' : 'turning-on'}"
+            viewBox="0 0 ${ringBoxPx} ${ringBoxPx}"
+            style="top: -${ringOffsetPx}px; left: -${ringOffsetPx}px; width: ${ringBoxPx}px; height: ${ringBoxPx}px"
+          >
+            <circle class="progress-track" cx=${ringCenter} cy=${ringCenter} r=${ringRadius}
+              stroke-width=${ringPx} pathLength="300"></circle>
+            <circle class="progress-bar" cx=${ringCenter} cy=${ringCenter} r=${ringRadius}
+              stroke-width=${ringPx} pathLength="300"></circle>
           </svg>`
         : '';
     return html`<div class="feature ${style}"><div
@@ -100,7 +119,7 @@ export class PressAndHoldCardFeature extends LitElement {
       aria-busy=${busy ? 'true' : 'false'}
       aria-disabled=${busy ? 'true' : 'false'}
       style="--control-color: ${cssColor(config?.color)}; --hold-duration: ${holdMs}ms${
-        config?.button_size ? `; --button-size: ${config.button_size}px` : ''
+        style === 'ring' ? `; --button-size: ${buttonPx}px` : ''
       }${config?.progress_color_on ? `; --progress-on: ${cssColor(config.progress_color_on)}` : ''}${
         config?.progress_color_off ? `; --progress-off: ${cssColor(config.progress_color_off)}` : ''
       }"
@@ -155,16 +174,13 @@ export class PressAndHoldCardFeature extends LitElement {
     }
     .progress {
       position: absolute;
-      inset: -6px;
-      width: calc(100% + 12px);
-      height: calc(100% + 12px);
       transform: rotate(-90deg);
       pointer-events: none;
+      overflow: visible;
     }
     .progress circle {
       fill: none;
       stroke: currentColor;
-      stroke-width: 8;
     }
     .progress.turning-on {
       color: var(--progress-on);

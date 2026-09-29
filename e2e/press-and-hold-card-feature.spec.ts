@@ -273,3 +273,30 @@ test("progress_color_off colors the bar's fill for a hold that turns the entity 
   await mountFeature(page, { style: 'bar', progress_color_off: SET_COLOR });
   expect((await barFill(page)).color).toBe(SET_COLOR);
 });
+
+// The ring's geometry on screen: its stroke width, and how far its inner edge
+// sits from the button's center, both in CSS pixels.
+const ringGeometry = (page: Page) =>
+  page.locator('press-and-hold-card-feature .progress').evaluate((svg) => {
+    const circle = svg.querySelector('.progress-bar') as SVGCircleElement;
+    const scale = svg.getBoundingClientRect().width / (svg as SVGSVGElement).viewBox.baseVal.width;
+    const strokeWidth = Number.parseFloat(getComputedStyle(circle).strokeWidth);
+    const strokePx =
+      circle.style.vectorEffect === 'non-scaling-stroke' ? strokeWidth : strokeWidth * scale;
+    return { strokePx, innerRadiusPx: (circle.r.baseVal.value - strokeWidth / 2) * scale };
+  });
+
+test("progress_width sets the ring's thickness", async ({ page }) => {
+  await mountFeature(page, { button_size: 84, progress_width: 12 });
+  expect((await ringGeometry(page)).strokePx).toBeCloseTo(12, 0);
+});
+
+test("by default, the ring's thickness is 12% of the button size", async ({ page }) => {
+  await mountFeature(page, { button_size: 84 });
+  expect((await ringGeometry(page)).strokePx).toBeCloseTo(10, 0);
+});
+
+test('the ring surrounds the button without covering it', async ({ page }) => {
+  await mountFeature(page, { button_size: 84 });
+  expect((await ringGeometry(page)).innerRadiusPx).toBeGreaterThan(42);
+});
