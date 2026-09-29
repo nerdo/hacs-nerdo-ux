@@ -207,3 +207,11 @@ test('the bar variant is a full-width bar', async ({ page }) => {
   if (!box) throw new Error('The control has no bounding box');
   expect(box.width).toBeGreaterThan(box.height * 3);
 });
+
+test("button_size sets the round button's diameter", async ({ page }) => {
+  await mountFeature(page, { button_size: 84 });
+  const box = await control(page).boundingBox();
+  if (!box) throw new Error('The control has no bounding box');
+  expect(Math.round(box.width)).toBe(84);
+  expect(Math.round(box.height)).toBe(84);
+});

@@ -160,6 +160,7 @@ features:
 | `label_on` / `label_off` | string | - | Text shown while `entity` is on / off. No text when omitted |
 | `icon` | string | - | Icon shown on the control (e.g. `mdi:power`). The control is blank when omitted |
 | `style` | string | `ring` | `ring`: a round button with a progress ring that fills during the hold, like the press-and-hold button card, with the label beside it. `bar`: a full-width bar with a fill that sweeps across, label inside |
+| `button_size` | number | feature height (42) | Diameter of the round button in pixels. The icon scales with it |
 | `hold_duration` | number | `1000` | Hold duration in milliseconds |
 | `movement_tolerance` | number | `20` | Pixels the pointer may move before the hold is cancelled |
 

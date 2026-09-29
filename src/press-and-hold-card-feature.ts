@@ -19,6 +19,8 @@ interface FeatureConfig {
   icon?: string;
   /** `ring` (default): a round button with a progress ring. `bar`: a full-width bar. */
   style?: 'ring' | 'bar';
+  /** Diameter of the round button, in pixels. Defaults to the tile feature height. */
+  button_size?: number;
   label_on?: string;
   label_off?: string;
   service?: string;
@@ -93,7 +95,9 @@ export class PressAndHoldCardFeature extends LitElement {
       class="control ${style} ${isOn ? 'on' : 'off'} ${busy ? 'busy' : ''} ${this.hold.holding ? 'holding' : ''}"
       aria-busy=${busy ? 'true' : 'false'}
       aria-disabled=${busy ? 'true' : 'false'}
-      style="--control-color: ${cssColor(config?.color)}; --hold-duration: ${holdMs}ms"
+      style="--control-color: ${cssColor(config?.color)}; --hold-duration: ${holdMs}ms${
+        config?.button_size ? `; --button-size: ${config.button_size}px` : ''
+      }"
       @pointerdown=${this.handlePointerDown}
       @pointermove=${this.hold.pointerMove}
       @pointerup=${this.hold.pointerUp}
@@ -131,7 +135,8 @@ export class PressAndHoldCardFeature extends LitElement {
     /* Round button, like the press-and-hold button card. */
     .control.ring {
       flex: none;
-      width: var(--feature-height, 42px);
+      width: var(--button-size, var(--feature-height, 42px));
+      height: var(--button-size, var(--feature-height, 42px));
       border-radius: 50%;
       overflow: visible;
     }
@@ -189,7 +194,7 @@ export class PressAndHoldCardFeature extends LitElement {
       position: relative;
       z-index: 1;
       color: var(--control-color);
-      --mdc-icon-size: 22px;
+      --mdc-icon-size: calc(var(--button-size, var(--feature-height, 42px)) * 0.5);
     }
     .control.on .icon {
       color: var(--text-primary-color, #fff);
