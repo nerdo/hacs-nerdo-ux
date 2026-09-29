@@ -215,3 +215,61 @@ test("button_size sets the round button's diameter", async ({ page }) => {
   expect(Math.round(box.width)).toBe(84);
   expect(Math.round(box.height)).toBe(84);
 });
+
+const SET_COLOR = 'rgb(10, 20, 30)';
+const SUCCESS_GREEN = 'rgb(76, 175, 80)';
+const WARNING_ORANGE = 'rgb(255, 152, 0)';
+const ringColor = (page: Page) =>
+  page
+    .locator('press-and-hold-card-feature .progress')
+    .evaluate((el) => getComputedStyle(el).color);
+const barFill = (page: Page) =>
+  control(page).evaluate((el) => {
+    const style = getComputedStyle(el, '::after');
+    return { color: style.backgroundColor, opacity: style.opacity };
+  });
+const turnOff = (page: Page) =>
+  page.evaluate(() => (window as any).setState('switch.arty1_outlet', 'off'));
+
+test('progress_color_on colors the ring for a hold that turns the entity on', async ({ page }) => {
+  await mountFeature(page, { progress_color_on: SET_COLOR });
+  await turnOff(page);
+  expect(await ringColor(page)).toBe(SET_COLOR);
+});
+
+test('progress_color_off colors the ring for a hold that turns the entity off', async ({
+  page,
+}) => {
+  await mountFeature(page, { progress_color_off: SET_COLOR });
+  expect(await ringColor(page)).toBe(SET_COLOR);
+});
+
+test("by default, the bar's fill for turning on is the success color at full strength", async ({
+  page,
+}) => {
+  await mountFeature(page, { style: 'bar' });
+  await turnOff(page);
+  expect(await barFill(page)).toEqual({ color: SUCCESS_GREEN, opacity: '1' });
+});
+
+test("by default, the bar's fill for turning off is the warning color at full strength", async ({
+  page,
+}) => {
+  await mountFeature(page, { style: 'bar' });
+  expect(await barFill(page)).toEqual({ color: WARNING_ORANGE, opacity: '1' });
+});
+
+test("progress_color_on colors the bar's fill for a hold that turns the entity on", async ({
+  page,
+}) => {
+  await mountFeature(page, { style: 'bar', progress_color_on: SET_COLOR });
+  await turnOff(page);
+  expect((await barFill(page)).color).toBe(SET_COLOR);
+});
+
+test("progress_color_off colors the bar's fill for a hold that turns the entity off", async ({
+  page,
+}) => {
+  await mountFeature(page, { style: 'bar', progress_color_off: SET_COLOR });
+  expect((await barFill(page)).color).toBe(SET_COLOR);
+});

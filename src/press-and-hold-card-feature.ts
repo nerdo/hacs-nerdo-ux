@@ -21,6 +21,10 @@ interface FeatureConfig {
   style?: 'ring' | 'bar';
   /** Diameter of the round button, in pixels. Defaults to the tile feature height. */
   button_size?: number;
+  /** Progress color for a hold that turns the entity on. Defaults to the theme's success color. */
+  progress_color_on?: string;
+  /** Progress color for a hold that turns the entity off. Defaults to the theme's warning color. */
+  progress_color_off?: string;
   label_on?: string;
   label_off?: string;
   service?: string;
@@ -97,6 +101,8 @@ export class PressAndHoldCardFeature extends LitElement {
       aria-disabled=${busy ? 'true' : 'false'}
       style="--control-color: ${cssColor(config?.color)}; --hold-duration: ${holdMs}ms${
         config?.button_size ? `; --button-size: ${config.button_size}px` : ''
+      }${config?.progress_color_on ? `; --progress-on: ${cssColor(config.progress_color_on)}` : ''}${
+        config?.progress_color_off ? `; --progress-off: ${cssColor(config.progress_color_off)}` : ''
       }"
       @pointerdown=${this.handlePointerDown}
       @pointermove=${this.hold.pointerMove}
@@ -125,6 +131,10 @@ export class PressAndHoldCardFeature extends LitElement {
       height: var(--feature-height, 42px);
       border-radius: var(--feature-border-radius, 12px);
       border: 2px solid var(--control-color);
+    }
+:host {
+      --progress-on: var(--success-color, #4caf50);
+      --progress-off: var(--warning-color, #ff9800);
     }
     .feature {
       display: flex;
@@ -157,10 +167,10 @@ export class PressAndHoldCardFeature extends LitElement {
       stroke-width: 8;
     }
     .progress.turning-on {
-      color: var(--success-color, #4caf50);
+      color: var(--progress-on);
     }
     .progress.turning-off {
-      color: var(--warning-color, #ff9800);
+      color: var(--progress-off);
     }
     .progress-track {
       opacity: 0;
@@ -228,8 +238,15 @@ export class PressAndHoldCardFeature extends LitElement {
       position: absolute;
       inset: 0;
       width: 0;
-      background-color: var(--primary-text-color, #000);
-      opacity: 0.2;
+      opacity: 1;
+    }
+    /* The sweep shows which way the hold goes: the "on" color when it will turn
+       the entity on, the "off" color when it will turn it off. */
+    .control.bar.off::after {
+      background-color: var(--progress-on);
+    }
+    .control.bar.on::after {
+      background-color: var(--progress-off);
     }
     .control.bar.holding::after {
       animation: hold-fill var(--hold-duration) linear forwards;
