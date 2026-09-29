@@ -46,7 +46,14 @@ async function mountFeature(page: Page, overrides: Record<string, unknown> = {})
   );
 }
 
+const feature = (page: Page) => page.locator('press-and-hold-card-feature');
 const control = (page: Page) => page.locator('press-and-hold-card-feature .control');
+const ringOffset = async (page: Page): Promise<number> =>
+  Number.parseFloat(
+    await page
+      .locator('press-and-hold-card-feature .progress-bar')
+      .evaluate((el) => getComputedStyle(el).strokeDashoffset),
+  );
 const calls = (page: Page) => page.evaluate(() => (window as any).calls);
 
 async function hold(page: Page, ms: number): Promise<void> {
@@ -89,9 +96,11 @@ test('moving past the movement tolerance during a hold calls nothing', async ({ 
   await mountFeature(page);
   const box = await control(page).boundingBox();
   if (!box) throw new Error('The control has no bounding box');
-  await page.mouse.move(box.x + 20, box.y + box.height / 2);
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.mouse.move(box.x + 80, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.move(x + 60, y, { steps: 5 });
   await page.waitForTimeout(HOLD_MS * 2);
   await page.mouse.up();
   expect(await calls(page)).toEqual([]);
@@ -111,8 +120,8 @@ test('while busy, the control is marked busy and disabled', async ({ page }) => 
   await expect(control(page)).toHaveAttribute('aria-disabled', 'true');
 });
 
-test('while busy, holding the control shows no hold fill', async ({ page }) => {
-  await mountFeature(page);
+test('while busy, holding the bar variant shows no hold fill', async ({ page }) => {
+  await mountFeature(page, { style: 'bar' });
   await page.evaluate(() => (window as any).setState('input_boolean.arty1_outlet_busy', 'on'));
   const box = await control(page).boundingBox();
   if (!box) throw new Error('The control has no bounding box');
@@ -128,13 +137,13 @@ const labels = { label_on: 'Shut down all', label_off: 'Turn on all' };
 
 test('shows its on label while its entity is on', async ({ page }) => {
   await mountFeature(page, labels);
-  await expect(control(page)).toHaveText('Shut down all');
+  await expect(feature(page)).toHaveText('Shut down all');
 });
 
 test('shows its off label while its entity is off', async ({ page }) => {
   await mountFeature(page, labels);
   await page.evaluate(() => (window as any).setState('switch.arty1_outlet', 'off'));
-  await expect(control(page)).toHaveText('Turn on all');
+  await expect(feature(page)).toHaveText('Turn on all');
 });
 
 test('registers itself so the tile editor can offer it', async ({ page }) => {
@@ -157,4 +166,44 @@ test('shows its icon when one is set', async ({ page }) => {
 test('shows no icon when none is set', async ({ page }) => {
   await mountFeature(page);
   await expect(icon(page)).toHaveCount(0);
+});
+
+test('by default, the control is a round button', async ({ page }) => {
+  await mountFeature(page);
+  const box = await control(page).boundingBox();
+  if (!box) throw new Error('The control has no bounding box');
+  expect(Math.abs(box.width - box.height)).toBeLessThan(1);
+  await expect(control(page)).toHaveCSS('border-top-left-radius', '50%');
+});
+
+test('by default, holding the control fills the progress ring around it', async ({ page }) => {
+  await mountFeature(page);
+  const box = await control(page).boundingBox();
+  if (!box) throw new Error('The control has no bounding box');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(HOLD_MS * 0.6);
+  const offset = await ringOffset(page);
+  await page.mouse.up();
+  expect(offset).toBeLessThan(300);
+});
+
+test('while busy, holding the round button fills no ring', async ({ page }) => {
+  await mountFeature(page);
+  await page.evaluate(() => (window as any).setState('input_boolean.arty1_outlet_busy', 'on'));
+  const box = await control(page).boundingBox();
+  if (!box) throw new Error('The control has no bounding box');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(HOLD_MS * 0.6);
+  const offset = await ringOffset(page);
+  await page.mouse.up();
+  expect(offset).toBe(300);
+});
+
+test('the bar variant is a full-width bar', async ({ page }) => {
+  await mountFeature(page, { style: 'bar' });
+  const box = await control(page).boundingBox();
+  if (!box) throw new Error('The control has no bounding box');
+  expect(box.width).toBeGreaterThan(box.height * 3);
 });

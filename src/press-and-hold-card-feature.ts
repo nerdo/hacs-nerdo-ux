@@ -17,6 +17,8 @@ interface FeatureConfig {
   hold_duration?: number;
   movement_tolerance?: number;
   icon?: string;
+  /** `ring` (default): a round button with a progress ring. `bar`: a full-width bar. */
+  style?: 'ring' | 'bar';
   label_on?: string;
   label_off?: string;
   service?: string;
@@ -75,8 +77,20 @@ export class PressAndHoldCardFeature extends LitElement {
     const holdMs = config?.hold_duration ?? DEFAULT_HOLD_MS;
     const busy = this.isBusy;
     const label = isOn ? config?.label_on : config?.label_off;
-    return html`<div
-      class="control ${isOn ? 'on' : 'off'} ${busy ? 'busy' : ''} ${this.hold.holding ? 'holding' : ''}"
+    const style = config?.style === 'bar' ? 'bar' : 'ring';
+    const iconTemplate = config?.icon
+      ? html`<ha-icon class="icon" .icon=${config.icon}></ha-icon>`
+      : '';
+    const labelTemplate = label ? html`<span class="label">${label}</span>` : '';
+    const ring =
+      style === 'ring'
+        ? html`<svg class="progress ${isOn ? 'turning-off' : 'turning-on'}" viewBox="0 0 100 100">
+            <circle class="progress-track" cx="50" cy="50" r="45"></circle>
+            <circle class="progress-bar" cx="50" cy="50" r="45"></circle>
+          </svg>`
+        : '';
+    return html`<div class="feature ${style}"><div
+      class="control ${style} ${isOn ? 'on' : 'off'} ${busy ? 'busy' : ''} ${this.hold.holding ? 'holding' : ''}"
       aria-busy=${busy ? 'true' : 'false'}
       aria-disabled=${busy ? 'true' : 'false'}
       style="--control-color: ${cssColor(config?.color)}; --hold-duration: ${holdMs}ms"
@@ -86,8 +100,8 @@ export class PressAndHoldCardFeature extends LitElement {
       @pointercancel=${this.hold.pointerUp}
       @pointerleave=${this.hold.pointerUp}
       @contextmenu=${(event: Event) => event.preventDefault()}
-    >${config?.icon ? html`<ha-icon class="icon" .icon=${config.icon}></ha-icon>` : ''}${
-      label ? html`<span class="label">${label}</span>` : ''
+    >${ring}${iconTemplate}${style === 'bar' ? labelTemplate : ''}</div>${
+      style === 'ring' ? labelTemplate : ''
     }</div>`;
   }
 
@@ -107,6 +121,63 @@ export class PressAndHoldCardFeature extends LitElement {
       height: var(--feature-height, 42px);
       border-radius: var(--feature-border-radius, 12px);
       border: 2px solid var(--control-color);
+    }
+    .feature {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    /* Round button, like the press-and-hold button card. */
+    .control.ring {
+      flex: none;
+      width: var(--feature-height, 42px);
+      border-radius: 50%;
+      overflow: visible;
+    }
+    .control.ring.holding {
+      transform: scale(0.95);
+    }
+    .progress {
+      position: absolute;
+      inset: -6px;
+      width: calc(100% + 12px);
+      height: calc(100% + 12px);
+      transform: rotate(-90deg);
+      pointer-events: none;
+    }
+    .progress circle {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 8;
+    }
+    .progress.turning-on {
+      color: var(--success-color, #4caf50);
+    }
+    .progress.turning-off {
+      color: var(--warning-color, #ff9800);
+    }
+    .progress-track {
+      opacity: 0;
+    }
+    .progress-bar {
+      stroke-dasharray: 300;
+      stroke-dashoffset: 300;
+      stroke-linecap: round;
+    }
+    .control.holding .progress-track {
+      opacity: 0.2;
+    }
+    .control.holding .progress-bar {
+      animation: fill-ring var(--hold-duration) linear forwards;
+    }
+    @keyframes fill-ring {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+    .control.bar {
+      flex: 1;
     }
     .control.on {
       background-color: var(--control-color);
@@ -147,7 +218,7 @@ export class PressAndHoldCardFeature extends LitElement {
       }
     }
     /* The hold fill sweeps across the control for the hold duration. */
-    .control::after {
+    .control.bar::after {
       content: '';
       position: absolute;
       inset: 0;
@@ -155,7 +226,7 @@ export class PressAndHoldCardFeature extends LitElement {
       background-color: var(--primary-text-color, #000);
       opacity: 0.2;
     }
-    .control.holding::after {
+    .control.bar.holding::after {
       animation: hold-fill var(--hold-duration) linear forwards;
     }
     @keyframes hold-fill {
